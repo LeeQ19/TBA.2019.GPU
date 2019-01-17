@@ -77,3 +77,42 @@ df.amd[round(res.roc.amd$eff_t, 5) == 1,]
 # RoC
 cbind(df.amd, res.roc.amd$roc_local)[!is.na(res.roc.amd$roc_local),]
 
+#####################################################################################
+### I/O Regression
+#####################################################################################
+
+# Selective data - target & previous model
+id.nvd <- c(1, 54, 60, 131, 146, 188, 221, 254, 281, 334)
+id.amd <- c(33, 50, 110, 141, 187, 242, 265, 283, 309)
+
+df.reg.nvd <- df.raw[id.nvd,]
+df.reg.amd <- df.raw[id.amd,]
+
+month.pred.nvd <- 167
+month.pred.amd <- 150
+
+# TDP plot - Nvidia
+ggplot(df.reg.nvd, aes(x = month, y = TDP)) + 
+  geom_point() + scale_size(guide = "none") + 
+  geom_smooth(method = 'lm', se = FALSE)
+
+# TDP predict -Nvidia
+model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
+summary(model.TDP.nvd)
+
+pred.TDP.nvd <- data.frame(TDP = df.reg.nvd$TDP, pred.TDP = predict(model.TDP.nvd, df.reg.nvd), month = df.reg.nvd$month)
+pred.TDP.nvd <- rbind(pred.TDP.nvd, data.frame(TDP = "", pred.TDP = predict(model.TDP.nvd, data.frame(month = month.pred.nvd)), month = month.pred.nvd))
+pred.TDP.nvd
+
+# TDP plot - AMD
+ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
+  geom_point() + scale_size(guide = "none") + 
+  geom_smooth(method = 'lm', se = FALSE)
+
+# TDP predict - AMD
+model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
+summary(model.TDP.amd)
+
+pred.TDP.amd <- data.frame(TDP = df.reg.amd$TDP, pred.TDP = predict(model.TDP.amd, df.reg.amd), month = df.reg.amd$month)
+pred.TDP.amd <- rbind(pred.TDP.amd, data.frame(TDP = "", pred.TDP = predict(model.TDP.amd, data.frame(month = month.pred.amd)), month = month.pred.amd))
+pred.TDP.amd

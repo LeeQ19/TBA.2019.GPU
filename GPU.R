@@ -134,5 +134,8 @@ weight.amd <- data.frame(FPP = 1 / df.reg.amd$Floating.point.performance,
                          TR  = 1 / df.reg.amd$Texture.rate, 
                          PR  = 1 / df.reg.amd$Pixel.rate)[nrow(df.reg.amd), ]
 
-weight     <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
+weight     <- rbind(nvd = weight.nvd, 
+                    amd = weight.amd)
+weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
+# test change

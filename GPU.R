@@ -138,3 +138,5 @@ weight     <- rbind(nvd = weight.nvd,
                     amd = weight.amd)
 weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
+
+# test change2

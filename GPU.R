@@ -143,7 +143,3 @@ weight     <- rbind(nvd = weight.nvd,
                     amd = weight.amd)
 weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
-
-# predict
-target.nvd <- target.spec.dea(df.eff[, id.x], df.eff[, id.y], df.nvd[, id.t], 2018, 2, dmu = 334, et = "c", alpha = ndata.nvd[3,2], wv = weight.nvd, rts = "crs")
-

@@ -92,34 +92,40 @@ month.pred.nvd <- 167
 month.pred.amd <- 150
 
 
+# TDP predict -Nvidia
+model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
+summary(model.TDP.nvd)
+
+pred.TDP.nvd.temp <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
+rownames(pred.TDP.nvd.temp) <- c("TDP")
+pred.TDP.nvd <- data.frame(month = rep(month.pred.nvd, 3), 
+                           t(pred.TDP.nvd.temp))
+
+pred.TDP.nvd
+
+
 # TDP plot - Nvidia
 ggplot(df.reg.nvd, aes(x = month, y = TDP)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = TRUE)
 
-# TDP predict -Nvidia
-model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
-summary(model.TDP.nvd)
 
-pred.TDP.nvd <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
-pred.TDP.nvd <- as.data.frame(t(pred.TDP.nvd))
+# TDP predict - AMD
+model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
+summary(model.TDP.amd)
 
-pred.TDP.nvd
+pred.TDP.amd.temp <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
+rownames(pred.TDP.amd.temp) <- c("TDP")
+pred.TDP.amd <- data.frame(month = rep(month.pred.amd, 3), 
+                           t(pred.TDP.amd.temp))
 
+pred.TDP.amd
 
 # TDP plot - AMD
 ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = TRUE)
 
-# TDP predict - AMD
-model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
-summary(model.TDP.amd)
-
-pred.TDP.amd <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
-pred.TDP.amd <- as.data.frame(t(pred.TDP.amd))
-
-pred.TDP.amd
 
 # Weight based on rescaling each output
 weight.nvd <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 
@@ -133,3 +139,13 @@ weight     <- rbind(nvd = weight.nvd,
                     amd = weight.amd)
 weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
+
+#####################################################################################
+### Target setting
+#####################################################################################
+
+# Target setting - Nvidia
+target.nvd <- target.spec.dea(xdata = data.frame(df.nvd[, id.x]),
+                              ydata = data.frame(df.nvd[, id.y]), 
+                              date = data.frame(df.nvd[, id.t]),
+                              t = 2018, dt = 2, dmu = 178, et = "c", alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)

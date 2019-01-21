@@ -108,6 +108,9 @@ pred.TDP.nvd <- rbind(pred.TDP.nvd, data.frame(TDP = "",
                                                month = month.pred.nvd))
 pred.TDP.nvd
 
+pr.nvd <- predict(model.TDP.nvd, data.frame(month = 155), level = 0.9, interval = "confidence")
+ndata.nvd <- data.frame(month = c(155, 155, 155), TDP = pr.nv[1:3])
+
 # TDP plot - AMD
 ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
   geom_point() + scale_size(guide = "none") + 
@@ -125,6 +128,8 @@ pred.TDP.amd <- rbind(pred.TDP.amd, data.frame(TDP = "",
                                                month = month.pred.amd))
 pred.TDP.amd
 
+pr.amd <- predict(model.TDP.amd, data.frame(month = 155), level = 0.9, interval = "confidence")
+ndata.amd <- data.frame(month = c(155, 155, 155), TDP = pr.nv[1:3])
 
 # Weight based on rescaling each output
 weight.nvd <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 

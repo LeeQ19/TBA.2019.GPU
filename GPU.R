@@ -91,6 +91,7 @@ df.reg.amd <- df.raw[id.amd,]
 month.pred.nvd <- 167
 month.pred.amd <- 150
 
+
 # TDP plot - Nvidia
 ggplot(df.reg.nvd, aes(x = month, y = TDP)) + 
   geom_point() + scale_size(guide = "none") + 
@@ -100,16 +101,11 @@ ggplot(df.reg.nvd, aes(x = month, y = TDP)) +
 model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
 summary(model.TDP.nvd)
 
-pred.TDP.nvd <- data.frame(TDP = df.reg.nvd$TDP, 
-                           pred.TDP = predict(model.TDP.nvd, df.reg.nvd), 
-                           month = df.reg.nvd$month)
-pred.TDP.nvd <- rbind(pred.TDP.nvd, data.frame(TDP = "", 
-                                               pred.TDP = predict(model.TDP.nvd, data.frame(month = month.pred.nvd)), 
-                                               month = month.pred.nvd))
+pred.TDP.nvd <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
+pred.TDP.nvd <- as.data.frame(t(pred.TDP.nvd))
+
 pred.TDP.nvd
 
-pr.nvd <- predict(model.TDP.nvd, data.frame(month = 155), level = 0.9, interval = "confidence")
-ndata.nvd <- data.frame(month = c(155, 155, 155), TDP = pr.nv[1:3])
 
 # TDP plot - AMD
 ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
@@ -120,16 +116,10 @@ ggplot(df.reg.amd, aes(x = month, y = TDP)) +
 model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
 summary(model.TDP.amd)
 
-pred.TDP.amd <- data.frame(TDP = df.reg.amd$TDP, 
-                           pred.TDP = predict(model.TDP.amd, df.reg.amd), 
-                           month = df.reg.amd$month)
-pred.TDP.amd <- rbind(pred.TDP.amd, data.frame(TDP = "", 
-                                               pred.TDP = predict(model.TDP.amd, data.frame(month = month.pred.amd)), 
-                                               month = month.pred.amd))
-pred.TDP.amd
+pred.TDP.amd <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
+pred.TDP.amd <- as.data.frame(t(pred.TDP.amd))
 
-pr.amd <- predict(model.TDP.amd, data.frame(month = 155), level = 0.9, interval = "confidence")
-ndata.amd <- data.frame(month = c(155, 155, 155), TDP = pr.nv[1:3])
+pred.TDP.amd
 
 # Weight based on rescaling each output
 weight.nvd <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 

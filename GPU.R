@@ -128,6 +128,7 @@ ggplot(df.reg.amd, aes(x = month, y = TDP)) +
 
 
 # Weight based on rescaling each output
+### Have to edit
 weight.nvd <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 
                          TR  = 1 / df.reg.nvd$Texture.rate, 
                          PR  = 1 / df.reg.nvd$Pixel.rate)[nrow(df.reg.nvd), ]
@@ -140,12 +141,11 @@ weight     <- rbind(nvd = weight.nvd,
 weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
 
+
 #####################################################################################
 ### Target setting
 #####################################################################################
 
-# Target setting - Nvidia
-target.nvd <- target.spec.dea(xdata = data.frame(df.nvd[, id.x]),
-                              ydata = data.frame(df.nvd[, id.y]), 
-                              date = data.frame(df.nvd[, id.t]),
-                              t = 2018, dt = 2, dmu = 178, et = "c", alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)
+# Target setting - Nvidia.RTX 2080
+target.nvd <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), date = data.frame(df.nvd[, id.t]),
+                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), et = "c", alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)

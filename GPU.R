@@ -96,10 +96,10 @@ month.pred.amd <- 150
 model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
 summary(model.TDP.nvd)
 
-pred.TDP.nvd.temp <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
-rownames(pred.TDP.nvd.temp) <- c("TDP")
+pred.TDP.nvd_temp <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
+rownames(pred.TDP.nvd_temp) <- c("TDP")
 pred.TDP.nvd <- data.frame(month = rep(month.pred.nvd, 3), 
-                           t(pred.TDP.nvd.temp))
+                           t(pred.TDP.nvd_temp))
 
 pred.TDP.nvd
 
@@ -114,10 +114,10 @@ ggplot(df.reg.nvd, aes(x = month, y = TDP)) +
 model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
 summary(model.TDP.amd)
 
-pred.TDP.amd.temp <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
-rownames(pred.TDP.amd.temp) <- c("TDP")
+pred.TDP.amd_temp <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
+rownames(pred.TDP.amd_temp) <- c("TDP")
 pred.TDP.amd <- data.frame(month = rep(month.pred.amd, 3), 
-                           t(pred.TDP.amd.temp))
+                           t(pred.TDP.amd_temp))
 
 pred.TDP.amd
 
@@ -128,13 +128,15 @@ ggplot(df.reg.amd, aes(x = month, y = TDP)) +
 
 
 # Weight based on rescaling each output
-### Have to edit
-weight.nvd <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 
-                         TR  = 1 / df.reg.nvd$Texture.rate, 
-                         PR  = 1 / df.reg.nvd$Pixel.rate)[nrow(df.reg.nvd), ]
-weight.amd <- data.frame(FPP = 1 / df.reg.amd$Floating.point.performance, 
-                         TR  = 1 / df.reg.amd$Texture.rate, 
-                         PR  = 1 / df.reg.amd$Pixel.rate)[nrow(df.reg.amd), ]
+weight.nvd_temp <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 
+                              TR  = 1 / df.reg.nvd$Texture.rate, 
+                              PR  = 1 / df.reg.nvd$Pixel.rate)[nrow(df.reg.nvd), ]
+weight.nvd <- weight.nvd_temp / sum(weight.nvd_temp)
+
+weight.amd_temp <- data.frame(FPP = 1 / df.reg.amd$Floating.point.performance, 
+                              TR  = 1 / df.reg.amd$Texture.rate, 
+                              PR  = 1 / df.reg.amd$Pixel.rate)[nrow(df.reg.amd), ]
+weight.amd <- weight.amd_temp / sum(weight.amd_temp)
 
 weight     <- rbind(nvd = weight.nvd, 
                     amd = weight.amd)
@@ -147,5 +149,9 @@ weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE)))
 #####################################################################################
 
 # Target setting - Nvidia.RTX 2080
-target.nvd <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), date = data.frame(df.nvd[, id.t]),
+target.nvd <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), et = "c", alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)
+
+# Target setting - AMD.Radeon RX 580
+target.amd <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
+                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], et = "c", alpha = pred.TDP.amd$TDP[1], wv = weight.amd, rts = rts)

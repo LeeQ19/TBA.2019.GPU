@@ -140,8 +140,8 @@ weight.amd <- weight.amd_temp / sum(weight.amd_temp)
 
 weight     <- rbind(nvd = weight.nvd, 
                     amd = weight.amd)
-weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
-                    amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
+# weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
+#                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
 
 
 #####################################################################################
@@ -149,9 +149,15 @@ weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE)))
 #####################################################################################
 
 # Target setting - Nvidia.RTX 2080
-target.nvd <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
+target.nvd.fit <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), et = "c", alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)
 
+target.nvd.upr <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
+                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), et = "c", alpha = pred.TDP.nvd$TDP[3], wv = weight.nvd, rts = rts)
+
 # Target setting - AMD.Radeon RX 580
-target.amd <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
+target.amd.fit <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], et = "c", alpha = pred.TDP.amd$TDP[1], wv = weight.amd, rts = rts)
+
+target.amd.upr <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
+                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], et = "c", alpha = pred.TDP.amd$TDP[3], wv = weight.amd, rts = rts)

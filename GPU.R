@@ -43,6 +43,9 @@ df.eff[round(res.roc.all$eff_t, 5) == 1,]
 # RoC
 cbind(df.eff, res.roc.all$roc_local)[!is.na(res.roc.all$roc_local),]
 
+# Bind DMUs & eff at 2018
+df.eff <- cbind(df.eff, Eff.2018 = res.roc.all$eff_t)
+
 
 #####################################################################################
 ### Analysis - NVidia
@@ -60,6 +63,8 @@ df.nvd[round(res.roc.nvd$eff_t, 5) == 1,]
 # RoC
 cbind(df.nvd, res.roc.nvd$roc_local)[!is.na(res.roc.nvd$roc_local),]
 
+# Bind DMUs & eff at 2018
+df.nvd <- cbind(df.nvd, Eff.2018 = res.roc.nvd$eff_t)
 
 #####################################################################################
 ### Analysis - AMD
@@ -77,15 +82,19 @@ df.amd[round(res.roc.amd$eff_t, 5) == 1,]
 # RoC
 cbind(df.amd, res.roc.amd$roc_local)[!is.na(res.roc.amd$roc_local),]
 
+# Bind DMUs & eff at 2018
+df.amd <- cbind(df.amd, Eff.2018 = res.roc.amd$eff_t)
+
 #####################################################################################
 ### I/O Regression
 #####################################################################################
 
 # Selective data - target & previous model
+### Have to change
 id.nvd <- c(1, 54, 60, 131, 146, 188, 221, 254, 281, 334)
 id.amd <- c(33, 50, 110, 141, 187, 242, 265, 283, 309)
 
-df.reg.nvd <- subset(df.nvd, DMU == id.nvd)
+df.reg.nvd <- df.raw[id.nvd, ]
 df.reg.amd <- df.raw[id.amd, ]
 
 month.pred.nvd <- 167
@@ -148,6 +157,21 @@ weight     <- rbind(nvd = weight.nvd,
 ### Target setting
 #####################################################################################
 
+# Function to compare
+target.table <- function(DMU, target){
+  table.x <- data.frame(Name = DMU$Name, 
+                        Eff.2018 = DMU$Eff.2018, 
+                        TDP = target$alpha, 
+                        FPP = target$beta[1], 
+                        TR = target$beta[2], 
+                        PR = target$beta[3], 
+                        TDP.change = round(target$alpha / DMU$TDP, 4), 
+                        FPP.change = round(target$beta[1] / DMU$Floating.point.performance, 4), 
+                        TR.change = round(target$beta[2] / DMU$Texture.rate, 4), 
+                        PR.change = round(target$beta[3] / DMU$Pixel.rate, 4))
+  table.x
+}
+
 # Target setting - Nvidia.RTX 2080
 target.nvd.fit <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
                                   t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), et = "c", alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)
@@ -161,3 +185,8 @@ target.amd.fit <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[
 
 target.amd.upr <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
                                   t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], et = "c", alpha = pred.TDP.amd$TDP[3], wv = weight.amd, rts = rts)
+
+# Run function
+target.table(df.nvd[which(df.nvd$Name == "RTX 2080"), ], target.nvd.upr)
+
+target.table(df.amd[which(df.amd$Name == "Radeon RX 580")[1], ], target.amd.fit)

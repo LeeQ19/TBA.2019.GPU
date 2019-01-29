@@ -190,3 +190,20 @@ target.amd.upr <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[
 target.table(df.nvd[which(df.nvd$Name == "RTX 2080"), ], target.nvd.upr)
 
 target.table(df.amd[which(df.amd$Name == "Radeon RX 580")[1], ], target.amd.fit)
+
+# Grid search
+weight.grid <- data.frame(FPP = rep(seq(1e-2, 1, by = 1e-2), each = 1e+4), 
+                          TR  = rep(seq(1e-2, 1, by = 1e-2), each = 1e+2, times = 1e+2), 
+                          PR  = rep(seq(1e-2, 1, by = 1e-2), times = 1e+4))
+
+res.grid    <- data.frame()
+
+for(i in 1:1e+4){
+  res.grid <- rbind(res.grid, target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
+                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), et = "c", alpha = pred.TDP.nvd$TDP[1], 
+                                              wv = weight.grid[i, ], rts = rts)$beta)
+}
+
+which(round(res.grid$V1, 2) != 12556.81)
+which(round(res.grid$V2, 4) != 392.7201)
+which(round(res.grid$V3, 4) != 224.4115)

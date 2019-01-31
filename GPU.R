@@ -198,7 +198,7 @@ weight.grid <- data.frame(FPP = rep(seq(1e-1, 1, by = 1e-1), each = 1e+2),
 
 res.grid    <- data.frame(t(apply(weight.grid, 1, 
                                   function(x){target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "TITAN RTX"), alpha = pred.TDP.nvd$TDP[1], 
+                                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], 
                                                               wv = x, rts = rts)$beta})))
 
 which(round(res.grid$X1, 2) != round(res.grid$X1[1], 2))

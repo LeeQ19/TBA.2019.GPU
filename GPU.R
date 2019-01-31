@@ -18,12 +18,12 @@ df.raw <- read.csv(url(path))
 df.raw[, "Released.year"] <- floor(df.raw[, "Released.date"])
 
 # Parameter
-id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 217, 252, 268)
+id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 165, 166, 217, 252, 268)
 id.x   <- c(4)
 id.y   <- c(8:10)
 id.t   <- 15
 fy     <- 2018
-rts    <- "crs"
+rts    <- "vrs"
 ori    <- "o"
 
 
@@ -192,15 +192,15 @@ target.table(df.nvd[which(df.nvd$Name == "RTX 2080"), ], target.nvd.upr)
 target.table(df.amd[which(df.amd$Name == "Radeon RX 580")[1], ], target.amd.fit)
 
 # Grid search
-weight.grid <- data.frame(FPP = rep(seq(1e-2, 1, by = 1e-2), each = 1e+4), 
-                          TR  = rep(seq(1e-2, 1, by = 1e-2), each = 1e+2, times = 1e+2), 
-                          PR  = rep(seq(1e-2, 1, by = 1e-2), times = 1e+4))
+weight.grid <- data.frame(FPP = rep(seq(1e-1, 1, by = 1e-1), each = 1e+2), 
+                          TR  = rep(seq(1e-1, 1, by = 1e-1), each = 1e+1, times = 1e+1), 
+                          PR  = rep(seq(1e-1, 1, by = 1e-1), times = 1e+2))
 
-res.grid    <- data.frame(t(apply(weight.grid[1:1e+3, ], 1, 
+res.grid    <- data.frame(t(apply(weight.grid, 1, 
                                   function(x){target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], 
+                                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "TITAN RTX"), alpha = pred.TDP.nvd$TDP[1], 
                                                               wv = x, rts = rts)$beta})))
 
-which(round(res.grid$X1, 2) != 12556.81)
-which(round(res.grid$X2, 4) != 392.7201)
-which(round(res.grid$X3, 4) != 224.4115)
+which(round(res.grid$X1, 2) != round(res.grid$X1[1], 2))
+which(round(res.grid$X2, 4) != round(res.grid$X2[1], 4))
+which(round(res.grid$X3, 4) != round(res.grid$X3[1], 4))

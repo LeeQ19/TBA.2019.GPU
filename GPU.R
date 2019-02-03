@@ -14,11 +14,14 @@ sapply(pkgs, require, character.only = T)
 
 # Load data
 path   <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRozW_LPzi4Objm4RbLzM_cItbMZzPbaVFheZcv__palp9QhA0qUwUidRqeP7SwrHpcfDSAuXYraPjP/pub?output=csv"
+path2  <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyu65AXjBaSFrKy2oos9nbJ4NM6PpHKoOcuie3O_58STPQ8FGFresl9nMhXkQDHPL1pQkmTTccZQBi/pub?output=csv"
 df.raw <- read.csv(url(path))
+df.raw2 <- read.csv(url(path2))
 df.raw[, "Released.year"] <- floor(df.raw[, "Released.date"])
 
+
 # Parameter
-id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 165, 166, 217, 252, 268)
+id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 155, 165, 166, 217, 252, 268)
 id.x   <- c(4)
 id.y   <- c(8:10)
 id.t   <- 15

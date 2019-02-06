@@ -38,23 +38,23 @@ df.trend <- data.frame(DMU     = df.eff$DMU,
                        MF      = df.eff$mf)
 
 # Plot FPP/TDP - Month
-ggplot(df.trend.frt, aes(x = Month, y = FPP.TDP, color = MF)) + 
+ggplot(df.trend, aes(x = Month, y = FPP.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot TR/TDP - Month
-ggplot(df.trend.frt, aes(x = Month, y = TR.TDP, color = MF)) + 
+ggplot(df.trend, aes(x = Month, y = TR.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot PR/TDP - Month
-ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + 
+ggplot(df.trend, aes(x = Month, y = PR.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)
 
 
 #####################################################################################
-### Analysis - all
+### Trends of Outputs per Input of DMUs on the Frontier
 #####################################################################################
 
 # Select DMUs on frontier
@@ -77,16 +77,16 @@ df.trend.frt <- data.frame(DMU     = df.frt$DMU,
                            MF      = df.frt$mf)
 
 # Plot FPP/TDP - Month
-ggplot(df.trend, aes(x = Month, y = FPP.TDP, color = MF)) + 
+ggplot(df.trend.frt, aes(x = Month, y = FPP.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot TR/TDP - Month
-ggplot(df.trend, aes(x = Month, y = TR.TDP, color = MF)) + 
+ggplot(df.trend.frt, aes(x = Month, y = TR.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot PR/TDP - Month
-ggplot(df.trend, aes(x = Month, y = PR.TDP, color = MF)) + 
+ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)

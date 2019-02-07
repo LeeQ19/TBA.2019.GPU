@@ -141,3 +141,17 @@ ggplot(df.trend.frt, aes(x = Month, y = TR.TDP, color = MF)) +
 ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + 
   geom_point() + scale_size(guide = "none") + 
   geom_smooth(method = 'lm', se = FALSE)
+
+
+#####################################################################################
+### Calculate Efficiency of all DMUs at each Year
+#####################################################################################
+
+# Make empty data.frame
+eff <- data.frame(1:nrow(df.eff))[, FALSE]
+
+# Run
+for (i in 2007:2018){
+  res.roc.all <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], i, rts, ori)
+  eff <- cbind(eff, res.roc.all$eff_t)
+}

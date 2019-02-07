@@ -22,6 +22,57 @@ ori    <- "o"
 
 
 #####################################################################################
+### I/O Regression
+#####################################################################################
+
+# Selective data - target & previous model
+### Have to change
+id.nvd <- c(1, 54, 60, 131, 146, 188, 221, 254, 281, 334)
+id.amd <- c(33, 50, 110, 141, 187, 242, 265, 283, 309)
+
+df.reg.nvd <- df.raw[id.nvd, ]
+df.reg.amd <- df.raw[id.amd, ]
+
+month.pred.nvd <- 167
+month.pred.amd <- 150
+
+
+# TDP predict -Nvidia
+model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
+summary(model.TDP.nvd)
+
+pred.TDP.nvd_temp <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
+rownames(pred.TDP.nvd_temp) <- c("TDP")
+pred.TDP.nvd <- data.frame(month = rep(month.pred.nvd, 3), 
+                           t(pred.TDP.nvd_temp))
+
+pred.TDP.nvd
+
+
+# TDP plot - Nvidia
+ggplot(df.reg.nvd, aes(x = month, y = TDP)) + 
+  geom_point() + scale_size(guide = "none") + 
+  geom_smooth(method = 'lm', se = TRUE)
+
+
+# TDP predict - AMD
+model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
+summary(model.TDP.amd)
+
+pred.TDP.amd_temp <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
+rownames(pred.TDP.amd_temp) <- c("TDP")
+pred.TDP.amd <- data.frame(month = rep(month.pred.amd, 3), 
+                           t(pred.TDP.amd_temp))
+
+pred.TDP.amd
+
+# TDP plot - AMD
+ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
+  geom_point() + scale_size(guide = "none") + 
+  geom_smooth(method = 'lm', se = TRUE)
+
+
+#####################################################################################
 ### Trends of Outputs per Input of All DMU
 #####################################################################################
 

@@ -153,5 +153,6 @@ eff <- data.frame(1:nrow(df.eff))[, FALSE]
 # Run
 for (i in 2007:2018){
   res.roc.all <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], i, rts, ori)
+  colnames(res.roc.all$eff_t) <- i
   eff <- cbind(eff, res.roc.all$eff_t)
 }

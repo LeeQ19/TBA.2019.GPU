@@ -148,7 +148,7 @@ ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) +
 #####################################################################################
 
 # Make empty data.frame
-eff <- data.frame(1:nrow(df.eff))[, FALSE]
+eff <- data.frame(Name = df.eff$Name)
 
 # Run
 for (i in 2007:2018){
@@ -156,3 +156,5 @@ for (i in 2007:2018){
   colnames(res.roc.all$eff_t) <- i
   eff <- cbind(eff, res.roc.all$eff_t)
 }
+
+select.eff <- apply(eff, 1, function(x){1 %in% x})

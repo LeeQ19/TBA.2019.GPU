@@ -161,7 +161,7 @@ weight     <- rbind(nvd = weight.nvd,
 ### Target setting
 #####################################################################################
 
-# Function to compare
+# Define function to compare
 target.table <- function(DMU, target){
   table.x <- data.frame(Name = DMU$Name, 
                         Eff.2018 = DMU$Eff.2018, 

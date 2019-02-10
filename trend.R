@@ -157,4 +157,8 @@ for (i in 2007:2018){
   eff <- cbind(eff, res.roc.all$eff_t)
 }
 
-select.eff <- apply(eff, 1, function(x){1 %in% x})
+# Display DMUs having efficiency 1
+
+select.eff <- apply(eff[-1], 1, function(x){1 %in% round(x, 7)})
+
+eff.frt <- eff[select.eff, ]

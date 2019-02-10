@@ -50,8 +50,7 @@ pred.TDP.nvd
 
 
 # TDP plot - Nvidia
-ggplot(df.reg.nvd, aes(x = month, y = TDP)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.reg.nvd, aes(x = month, y = TDP)) + geom_point() + 
   geom_smooth(method = 'lm', se = TRUE)
 
 
@@ -67,8 +66,7 @@ pred.TDP.amd <- data.frame(month = rep(month.pred.amd, 3),
 pred.TDP.amd
 
 # TDP plot - AMD
-ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.reg.amd, aes(x = month, y = TDP)) + geom_point() + 
   geom_smooth(method = 'lm', se = TRUE)
 
 
@@ -89,18 +87,15 @@ df.trend <- data.frame(DMU     = df.eff$DMU,
                        MF      = df.eff$mf)
 
 # Plot FPP/TDP - Month
-ggplot(df.trend, aes(x = Month, y = FPP.TDP, color = MF)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.trend, aes(x = Month, y = FPP.TDP, color = MF)) + geom_point() + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot TR/TDP - Month
-ggplot(df.trend, aes(x = Month, y = TR.TDP, color = MF)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.trend, aes(x = Month, y = TR.TDP, color = MF)) + geom_point() + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot PR/TDP - Month
-ggplot(df.trend, aes(x = Month, y = PR.TDP, color = MF)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.trend, aes(x = Month, y = PR.TDP, color = MF)) + geom_point() + 
   geom_smooth(method = 'lm', se = FALSE)
 
 
@@ -116,7 +111,8 @@ for (i in 2007:2018){
   df.frt      <- rbind(df.frt, df.eff[round(res.roc.all$eff_t, 5) == 1,])
 }
 
-df.frt <- na.omit(df.frt)
+df.frt <- unique(na.omit(df.frt))
+rownames(df.frt) <- seq(nrow(df.frt))
 
 # Make electric efficiency
 df.trend.frt <- data.frame(DMU     = df.frt$DMU, 
@@ -128,19 +124,39 @@ df.trend.frt <- data.frame(DMU     = df.frt$DMU,
                            MF      = df.frt$mf)
 
 # Plot FPP/TDP - Month
-ggplot(df.trend.frt, aes(x = Month, y = FPP.TDP, color = MF)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.trend.frt, aes(x = Month, y = FPP.TDP, color = MF)) + geom_point() + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot TR/TDP - Month
-ggplot(df.trend.frt, aes(x = Month, y = TR.TDP, color = MF)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.trend.frt, aes(x = Month, y = TR.TDP, color = MF)) + geom_point() + 
   geom_smooth(method = 'lm', se = FALSE)
 
 # Plot PR/TDP - Month
-ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + 
-  geom_point() + scale_size(guide = "none") + 
+ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + geom_point() + 
   geom_smooth(method = 'lm', se = FALSE)
+
+
+#####################################################################################
+### Trends of Outputs per Input of All DMUs & DMUs on the Frontier
+#####################################################################################
+
+# Plot FPP/TDP - Month
+ggplot(df.trend, aes(x = Month, y = FPP.TDP)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+
+# Plot TR/TDP - Month
+ggplot(df.trend, aes(x = Month, y = TR.TDP)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+
+# Plot PR/TDP - Month
+ggplot(df.trend, aes(x = Month, y = PR.TDP)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
 
 
 #####################################################################################
@@ -157,8 +173,9 @@ for (i in 2007:2018){
   eff <- cbind(eff, res.roc.all$eff_t)
 }
 
-# Display DMUs having efficiency 1
+# Display at least once efficient DMUs
 
 select.eff <- apply(eff[-1], 1, function(x){1 %in% round(x, 7)})
 
 eff.frt <- eff[select.eff, ]
+eff.frt

@@ -80,11 +80,31 @@ df.eff  <- df.raw[-id.out,]
 # Make electric efficiency
 df.trend <- data.frame(DMU     = df.eff$DMU, 
                        Name    = df.eff$Name, 
+                       TDP     = df.eff$TDP, 
+                       FPP     = df.eff$Floating.point.performance, 
+                       TR      = df.eff$Texture.rate, 
+                       PR      = df.eff$Pixel.rate, 
                        FPP.TDP = df.eff$Floating.point.performance / df.eff$TDP, 
                        TR.TDP  = df.eff$Texture.rate / df.eff$TDP, 
                        PR.TDP  = df.eff$Pixel.rate / df.eff$TDP, 
                        Month   = df.eff$month, 
                        MF      = df.eff$mf)
+
+# Plot TDP - Month
+ggplot(df.trend, aes(x = Month, y = TDP, color = MF)) + geom_point() + 
+  geom_smooth(method = 'lm', se = FALSE)
+
+# Plot FPP - Month
+ggplot(df.trend, aes(x = Month, y = FPP, color = MF)) + geom_point() + 
+  geom_smooth(method = 'lm', se = FALSE)
+
+# Plot TR - Month
+ggplot(df.trend, aes(x = Month, y = TR, color = MF)) + geom_point() + 
+  geom_smooth(method = 'lm', se = FALSE)
+
+# Plot PR - Month
+ggplot(df.trend, aes(x = Month, y = PR, color = MF)) + geom_point() + 
+  geom_smooth(method = 'lm', se = FALSE)
 
 # Plot FPP/TDP - Month
 ggplot(df.trend, aes(x = Month, y = FPP.TDP, color = MF)) + geom_point() + 
@@ -117,6 +137,10 @@ rownames(df.frt) <- seq(nrow(df.frt))
 # Make electric efficiency
 df.trend.frt <- data.frame(DMU     = df.frt$DMU, 
                            Name    = df.frt$Name, 
+                           TDP     = df.frt$TDP, 
+                           FPP     = df.frt$Floating.point.performance, 
+                           TR      = df.frt$Texture.rate, 
+                           PR      = df.frt$Pixel.rate, 
                            FPP.TDP = df.frt$Floating.point.performance / df.frt$TDP, 
                            TR.TDP  = df.frt$Texture.rate / df.frt$TDP, 
                            PR.TDP  = df.frt$Pixel.rate / df.frt$TDP, 
@@ -139,6 +163,30 @@ ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + geom_point() +
 #####################################################################################
 ### Trends of Outputs per Input of All DMUs & DMUs on the Frontier
 #####################################################################################
+
+# Plot TDP - Month
+ggplot(df.trend, aes(x = Month, y = TDP)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+
+# Plot FPP - Month
+ggplot(df.trend, aes(x = Month, y = FPP)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+
+# Plot TR - Month
+ggplot(df.trend, aes(x = Month, y = TR)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+
+# Plot PR - Month
+ggplot(df.trend, aes(x = Month, y = PR)) + geom_point(color = "grey") + 
+  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
+  geom_point(data = df.trend.frt, color = "BLACK") + 
+  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
 
 # Plot FPP/TDP - Month
 ggplot(df.trend, aes(x = Month, y = FPP.TDP)) + geom_point(color = "grey") + 

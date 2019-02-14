@@ -1,24 +1,20 @@
-#####################################################################################
+#########################################################################################################################
 ### Project  : Technology forecasting of GPU
 ### Script   : GPU.R
 ### Contents : GPU paper for PICMET2019
-#####################################################################################
+#########################################################################################################################
 
-#####################################################################################
+#########################################################################################################################
 ### Setting up environment
-#####################################################################################
+#########################################################################################################################
 
 # Load library  
 pkgs <- c("DJL", "ggplot2")
 sapply(pkgs, require, character.only = T)
 
 # Load data
-path   <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRozW_LPzi4Objm4RbLzM_cItbMZzPbaVFheZcv__palp9QhA0qUwUidRqeP7SwrHpcfDSAuXYraPjP/pub?output=csv"
-path2  <- "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyu65AXjBaSFrKy2oos9nbJ4NM6PpHKoOcuie3O_58STPQ8FGFresl9nMhXkQDHPL1pQkmTTccZQBi/pub?output=csv"
-df.raw <- read.csv(url(path))
-df.raw2 <- read.csv(url(path2))
+df.raw <- read.csv(url("http://bit.ly/2N3Nei5"), header = T)
 df.raw[, "Released.year"] <- floor(df.raw[, "Released.date"])
-
 
 # Parameter
 id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 155, 165, 166, 217, 252, 268)
@@ -30,17 +26,51 @@ rts    <- "vrs"
 ori    <- "o"
 
 
-#####################################################################################
-### Analysis - all
-#####################################################################################
+#########################################################################################################################
+### Pre-analysis
+#########################################################################################################################
 
 # Cleansed data
-df.eff  <- df.raw[-id.out,]
+df.eff <- df.raw[-id.out,]
+df.nvd <- subset(df.eff, mf == "NVIDIA")
+df.amd <- subset(df.eff, mf == "AMD")
+
+# Descriptive statistics
+table.1 <- sapply(df.eff[, c(id.x, id.y)], function(x) c(Min  = min(x),
+                                                         Med  = median(x),
+                                                         Mean = mean(x),
+                                                         Max  = max(x),
+                                                         Std  = sd(x)))
+print(noquote(format(round(t(table.1),2), big.mark = ",")))
+
+
+# Fitting test for ALL
+f.hrz   <- 3
+since   <- 2010
+res.fit <- data.frame(MAD.all  = NA, MAD.nvd = NA, MAD.amd = NA)
+for(i in since:2017){
+  df.t.all  <- df.eff[df.eff$Released.year < (i + f.hrz),]
+  df.t.nvd  <- df.nvd[df.nvd$Released.year < (i + f.hrz),]
+  df.t.amd  <- df.amd[df.amd$Released.year < (i + f.hrz),]
+  res.t.all <- target.arrival.dea(df.t.all[, id.x], df.t.all[, id.y], df.t.all[, id.t], i, rts, ori)$arrival_seg
+  res.t.nvd <- target.arrival.dea(df.t.nvd[, id.x], df.t.nvd[, id.y], df.t.nvd[, id.t], i, rts, ori)$arrival_seg
+  res.t.amd <- target.arrival.dea(df.t.amd[, id.x], df.t.amd[, id.y], df.t.amd[, id.t], i, rts, ori)$arrival_seg
+  res.e.all <- mean(abs(df.t.all[, id.t] - c(res.t.all)), na.rm = T)
+  res.e.nvd <- mean(abs(df.t.nvd[, id.t] - c(res.t.nvd)), na.rm = T)
+  res.e.amd <- mean(abs(df.t.amd[, id.t] - c(res.t.amd)), na.rm = T)
+  res.fit[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
+}
+print(cbind(F.origin = since:2017, res.fit))
+
+
+#########################################################################################################################
+### Analysis - all
+#########################################################################################################################
 
 # Run
 res.roc.all <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], fy, rts, ori)
 
-# Efficient GPU in 7
+# Efficient GPU in 2018
 df.eff[round(res.roc.all$eff_t, 5) == 1,]
 
 # RoC
@@ -50,9 +80,9 @@ cbind(df.eff, res.roc.all$roc_local)[!is.na(res.roc.all$roc_local),]
 df.eff <- cbind(df.eff, Eff.2018 = res.roc.all$eff_t)
 
 
-#####################################################################################
+#########################################################################################################################
 ### Analysis - NVidia
-#####################################################################################
+#########################################################################################################################
 
 # Selective data
 df.nvd <- subset(df.eff, mf == "NVIDIA")
@@ -60,15 +90,16 @@ df.nvd <- subset(df.eff, mf == "NVIDIA")
 # Run
 res.roc.nvd <- roc.dea(df.nvd[, id.x], df.nvd[, id.y], df.nvd[, id.t], fy, rts, ori)
 
-# Efficient GPU in 7
+# Efficient GPU in 2018
 df.nvd[round(res.roc.nvd$eff_t, 5) == 1,]
 
 # RoC
 cbind(df.nvd, res.roc.nvd$roc_local)[!is.na(res.roc.nvd$roc_local),]
 
 # Bind DMUs & eff at 2018
-df.nvd <- cbind(df.nvd, Eff.2018 = res.roc.nvd$eff_t)
-df.nvd <- cbind(df.nvd, Eff = res.roc.nvd$eff_r)
+df.nvd <- cbind(df.nvd, Eff.2018    = res.roc.nvd$eff_t)
+df.nvd <- cbind(df.nvd, Eff.release = res.roc.nvd$eff_r)
+
 
 #####################################################################################
 ### Analysis - AMD
@@ -80,15 +111,16 @@ df.amd <- subset(df.eff, mf == "AMD")
 # Run
 res.roc.amd <- roc.dea(df.amd[, id.x], df.amd[, id.y], df.amd[, id.t], fy, rts, ori)
 
-# Efficient GPU in 7
+# Efficient GPU in 2018
 df.amd[round(res.roc.amd$eff_t, 5) == 1,]
 
 # RoC
 cbind(df.amd, res.roc.amd$roc_local)[!is.na(res.roc.amd$roc_local),]
 
 # Bind DMUs & eff at 2018
-df.amd <- cbind(df.amd, Eff.2018 = res.roc.amd$eff_t)
-df.amd <- cbind(df.amd, Eff = res.roc.amd$eff_r)
+df.amd <- cbind(df.amd, Eff.2018    = res.roc.amd$eff_t)
+df.amd <- cbind(df.amd, Eff.release = res.roc.amd$eff_r)
+
 
 #####################################################################################
 ### I/O Regression

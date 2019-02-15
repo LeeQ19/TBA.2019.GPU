@@ -13,11 +13,12 @@ pkgs <- c("DJL", "ggplot2")
 sapply(pkgs, require, character.only = T)
 
 # Load data
-df.raw <- read.csv(url("http://bit.ly/2N3Nei5"), header = T)
+df.raw <- read.csv(url("http://bit.ly/2SxWwZC"), header = T)
 df.raw[, "Released.year"] <- floor(df.raw[, "Released.date"])
 
 # Parameter
-id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 155, 165, 166, 217, 252, 268)
+id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144,
+            150, 155, 165, 166, 217, 252, 268, 209, 235, 247, 251, 264)
 id.x   <- c(4)
 id.y   <- c(8:10)
 id.t   <- 15
@@ -43,15 +44,14 @@ table.1 <- sapply(df.eff[, c(id.x, id.y)], function(x) c(Min  = min(x),
                                                          Std  = sd(x)))
 print(noquote(format(round(t(table.1),2), big.mark = ",")))
 
-
 # Fitting test for ALL
-f.hrz   <- 3
-since   <- 2010
+f.hrz   <- 2
+since   <- 2012
 res.fit <- data.frame(MAD.all  = NA, MAD.nvd = NA, MAD.amd = NA)
-for(i in since:2017){
-  df.t.all  <- df.eff[df.eff$Released.year < (i + f.hrz),]
-  df.t.nvd  <- df.nvd[df.nvd$Released.year < (i + f.hrz),]
-  df.t.amd  <- df.amd[df.amd$Released.year < (i + f.hrz),]
+for(i in since:(2018 - f.hrz)){
+  df.t.all  <- df.eff[df.eff$Released.year <= (i + f.hrz),]
+  df.t.nvd  <- df.nvd[df.nvd$Released.year <= (i + f.hrz),]
+  df.t.amd  <- df.amd[df.amd$Released.year <= (i + f.hrz),]
   res.t.all <- target.arrival.dea(df.t.all[, id.x], df.t.all[, id.y], df.t.all[, id.t], i, rts, ori)$arrival_seg
   res.t.nvd <- target.arrival.dea(df.t.nvd[, id.x], df.t.nvd[, id.y], df.t.nvd[, id.t], i, rts, ori)$arrival_seg
   res.t.amd <- target.arrival.dea(df.t.amd[, id.x], df.t.amd[, id.y], df.t.amd[, id.t], i, rts, ori)$arrival_seg
@@ -60,7 +60,7 @@ for(i in since:2017){
   res.e.amd <- mean(abs(df.t.amd[, id.t] - c(res.t.amd)), na.rm = T)
   res.fit[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
 }
-print(cbind(F.origin = c(since:2017, "Avg"), round(rbind(res.fit, colMeans(res.fit)), 4)))
+print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(res.fit, colMeans(res.fit)), 4)))
 
 
 #########################################################################################################################

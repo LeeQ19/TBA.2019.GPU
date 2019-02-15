@@ -60,7 +60,7 @@ for(i in since:2017){
   res.e.amd <- mean(abs(df.t.amd[, id.t] - c(res.t.amd)), na.rm = T)
   res.fit[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
 }
-print(cbind(F.origin = since:2017, res.fit))
+print(cbind(F.origin = c(since:2017, "Avg"), round(rbind(res.fit, colMeans(res.fit)), 4)))
 
 
 #########################################################################################################################

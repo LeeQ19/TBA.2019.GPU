@@ -12,7 +12,8 @@ df.raw <- read.csv(url(path))
 df.raw[, "Released.year"] <- floor(df.raw[, "Released.date"])
 
 # Parameter
-id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 155, 165, 166, 217, 252, 268)
+id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144,
+            150, 155, 165, 166, 217, 252, 268, 209, 235, 247, 251, 264)
 id.x   <- c(4)
 id.y   <- c(8:10)
 id.t   <- 15
@@ -164,47 +165,38 @@ ggplot(df.trend.frt, aes(x = Month, y = PR.TDP, color = MF)) + geom_point() +
 ### Trends of Outputs per Input of All DMUs & DMUs on the Frontier
 #####################################################################################
 
-# Plot TDP - Month
-ggplot(df.trend, aes(x = Month, y = TDP)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
-
-# Plot FPP - Month
-ggplot(df.trend, aes(x = Month, y = FPP)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
-
-# Plot TR - Month
-ggplot(df.trend, aes(x = Month, y = TR)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
-
-# Plot PR - Month
-ggplot(df.trend, aes(x = Month, y = PR)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
-
 # Plot FPP/TDP - Month
-ggplot(df.trend, aes(x = Month, y = FPP.TDP)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+ggplot(df.trend) + 
+  geom_point(data = df.trend[df.trend$MF == "NVIDIA", ], aes(x = Month, y = FPP.TDP), color = "#7777DD", shape = 1) + 
+  geom_line(data = df.trend[df.trend$MF == "NVIDIA", ], stat = "smooth", method = lm, aes(x = Month, y = FPP.TDP), size = 1.0, color = "#7777DD", linetype = "dashed") + 
+  geom_point(data = df.trend[df.trend$MF == "AMD", ], aes(x = Month, y = FPP.TDP), color = "#CC6666", shape = 1) + 
+  geom_line(data = df.trend[df.trend$MF == "AMD", ], stat = "smooth", method = lm, aes(x = Month, y = FPP.TDP), size = 1.0, color = "#CC6666", linetype = "dashed") + 
+  geom_point(data = df.trend.frt[df.trend.frt$MF == "NVIDIA", ], aes(x = Month, y = FPP.TDP), color = "#7777DD") + 
+  geom_line(data = df.trend.frt[df.trend.frt$MF == "NVIDIA", ], stat = "smooth", method = lm, aes(x = Month, y = FPP.TDP), size = 1.0, color = "#7777DD") + 
+  geom_point(data = df.trend.frt[df.trend.frt$MF == "AMD", ], aes(x = Month, y = FPP.TDP), color = "#CC6666") + 
+  geom_line(data = df.trend.frt[df.trend.frt$MF == "AMD", ], stat = "smooth", method = lm, aes(x = Month, y = FPP.TDP), size = 1.0, color = "#CC6666")
 
 # Plot TR/TDP - Month
-ggplot(df.trend, aes(x = Month, y = TR.TDP)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+ggplot(df.trend) + 
+  geom_point(data = df.trend[df.trend$MF == "NVIDIA", ], aes(x = Month, y = TR.TDP), color = "#7777DD", shape = 1) + 
+  geom_line(data = df.trend[df.trend$MF == "NVIDIA", ], stat = "smooth", method = lm, aes(x = Month, y = TR.TDP), size = 1.0, color = "#7777DD", linetype = "dashed") + 
+  geom_point(data = df.trend[df.trend$MF == "AMD", ], aes(x = Month, y = TR.TDP), color = "#CC6666", shape = 1) + 
+  geom_line(data = df.trend[df.trend$MF == "AMD", ], stat = "smooth", method = lm, aes(x = Month, y = TR.TDP), size = 1.0, color = "#CC6666", linetype = "dashed") + 
+  geom_point(data = df.trend.frt[df.trend.frt$MF == "NVIDIA", ], aes(x = Month, y = TR.TDP), color = "#7777DD") + 
+  geom_line(data = df.trend.frt[df.trend.frt$MF == "NVIDIA", ], stat = "smooth", method = lm, aes(x = Month, y = TR.TDP), size = 1.0, color = "#7777DD") + 
+  geom_point(data = df.trend.frt[df.trend.frt$MF == "AMD", ], aes(x = Month, y = TR.TDP), color = "#CC6666") + 
+  geom_line(data = df.trend.frt[df.trend.frt$MF == "AMD", ], stat = "smooth", method = lm, aes(x = Month, y = TR.TDP), size = 1.0, color = "#CC6666")
 
 # Plot PR/TDP - Month
-ggplot(df.trend, aes(x = Month, y = PR.TDP)) + geom_point(color = "grey") + 
-  geom_smooth(method = 'lm', se = FALSE, color = "grey") + 
-  geom_point(data = df.trend.frt, color = "BLACK") + 
-  geom_smooth(data = df.trend.frt, method = 'lm', se = FALSE, color = "BLACK")
+ggplot(df.trend) + 
+  geom_point(data = df.trend[df.trend$MF == "NVIDIA", ], aes(x = Month, y = PR.TDP), color = "#7777DD", shape = 1) + 
+  geom_line(data = df.trend[df.trend$MF == "NVIDIA", ], stat = "smooth", method = lm, aes(x = Month, y = PR.TDP), size = 1.0, color = "#7777DD", linetype = "dashed") + 
+  geom_point(data = df.trend[df.trend$MF == "AMD", ], aes(x = Month, y = PR.TDP), color = "#CC6666", shape = 1) + 
+  geom_line(data = df.trend[df.trend$MF == "AMD", ], stat = "smooth", method = lm, aes(x = Month, y = PR.TDP), size = 1.0, color = "#CC6666", linetype = "dashed") + 
+  geom_point(data = df.trend.frt[df.trend.frt$MF == "NVIDIA", ], aes(x = Month, y = PR.TDP), color = "#7777DD") + 
+  geom_line(data = df.trend.frt[df.trend.frt$MF == "NVIDIA", ], stat = "smooth", method = lm, aes(x = Month, y = PR.TDP), size = 1.0, color = "#7777DD") + 
+  geom_point(data = df.trend.frt[df.trend.frt$MF == "AMD", ], aes(x = Month, y = PR.TDP), color = "#CC6666") + 
+  geom_line(data = df.trend.frt[df.trend.frt$MF == "AMD", ], stat = "smooth", method = lm, aes(x = Month, y = PR.TDP), size = 1.0, color = "#CC6666")
 
 
 #####################################################################################

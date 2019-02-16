@@ -28,7 +28,7 @@ ori    <- "o"
 
 
 #########################################################################################################################
-### Pre-analysis
+### Analysis
 #########################################################################################################################
 
 # Cleansed data
@@ -36,18 +36,18 @@ df.eff <- df.raw[-id.out,]
 df.nvd <- subset(df.eff, mf == "NVIDIA")
 df.amd <- subset(df.eff, mf == "AMD")
 
-# Descriptive statistics
+# Table.1 Descriptive statistics
 table.1 <- sapply(df.eff[, c(id.x, id.y)], function(x) c(Min  = min(x),
                                                          Med  = median(x),
                                                          Mean = mean(x),
                                                          Max  = max(x),
                                                          Std  = sd(x)))
-print(noquote(format(round(t(table.1),2), big.mark = ",")))
+print(noquote(format(round(t(table.1), 2), big.mark = ",")))
 
-# Fitting test for ALL
+# Table.2 Verification
 f.hrz   <- 2
 since   <- 2012
-res.fit <- data.frame(MAD.all  = NA, MAD.nvd = NA, MAD.amd = NA)
+table.2 <- data.frame(MAD.all  = NA, MAD.nvd = NA, MAD.amd = NA)
 for(i in since:(2018 - f.hrz)){
   df.t.all  <- df.eff[df.eff$Released.year <= (i + f.hrz),]
   df.t.nvd  <- df.nvd[df.nvd$Released.year <= (i + f.hrz),]
@@ -58,73 +58,24 @@ for(i in since:(2018 - f.hrz)){
   res.e.all <- mean(abs(df.t.all[, id.t] - c(res.t.all)), na.rm = T)
   res.e.nvd <- mean(abs(df.t.nvd[, id.t] - c(res.t.nvd)), na.rm = T)
   res.e.amd <- mean(abs(df.t.amd[, id.t] - c(res.t.amd)), na.rm = T)
-  res.fit[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
+  table.2[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
 }
-print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(res.fit, colMeans(res.fit)), 4)))
+print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(table.2, colMeans(res.fit)), 4)))
+
+# Table.3 SOAs in 2018
+res.roc <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], fy, rts, ori)
+id.lroc <- which(res.roc$roc_local > 1)
+table.3 <- data.frame(Name     = df.eff$Name[id.lroc],
+                      MF       = df.eff$mf[id.lroc],
+                      Year     = df.eff$Released.year[id.lroc],
+                      df.eff[id.lroc, c(id.x, id.y), drop = F],
+                      LocalRoC = res.roc$roc_local[id.lroc])
+print(cbind(table.3[,1:3], format(round(table.3[,4:7], 2), big.mark = ","), round(table.3[,8, drop = F], 4)))
 
 
 #########################################################################################################################
-### Analysis - all
-#########################################################################################################################
-
-# Run
-res.roc.all <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], fy, rts, ori)
-
-# Efficient GPU in 2018
-df.eff[round(res.roc.all$eff_t, 5) == 1,]
-
-# RoC
-cbind(df.eff, res.roc.all$roc_local)[!is.na(res.roc.all$roc_local),]
-
-# Bind DMUs & eff at 2018
-df.eff <- cbind(df.eff, Eff.2018 = res.roc.all$eff_t)
-
-
-#########################################################################################################################
-### Analysis - NVidia
-#########################################################################################################################
-
-# Selective data
-df.nvd <- subset(df.eff, mf == "NVIDIA")
-
-# Run
-res.roc.nvd <- roc.dea(df.nvd[, id.x], df.nvd[, id.y], df.nvd[, id.t], fy, rts, ori)
-
-# Efficient GPU in 2018
-df.nvd[round(res.roc.nvd$eff_t, 5) == 1,]
-
-# RoC
-cbind(df.nvd, res.roc.nvd$roc_local)[!is.na(res.roc.nvd$roc_local),]
-
-# Bind DMUs & eff at 2018
-df.nvd <- cbind(df.nvd, Eff.2018    = res.roc.nvd$eff_t)
-df.nvd <- cbind(df.nvd, Eff.release = res.roc.nvd$eff_r)
-
-
-#####################################################################################
-### Analysis - AMD
-#####################################################################################
-
-# Selective data
-df.amd <- subset(df.eff, mf == "AMD")
-
-# Run
-res.roc.amd <- roc.dea(df.amd[, id.x], df.amd[, id.y], df.amd[, id.t], fy, rts, ori)
-
-# Efficient GPU in 2018
-df.amd[round(res.roc.amd$eff_t, 5) == 1,]
-
-# RoC
-cbind(df.amd, res.roc.amd$roc_local)[!is.na(res.roc.amd$roc_local),]
-
-# Bind DMUs & eff at 2018
-df.amd <- cbind(df.amd, Eff.2018    = res.roc.amd$eff_t)
-df.amd <- cbind(df.amd, Eff.release = res.roc.amd$eff_r)
-
-
-#####################################################################################
 ### I/O Regression
-#####################################################################################
+#########################################################################################################################
 
 # Selective data - target & previous model
 ### Have to change

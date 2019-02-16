@@ -78,6 +78,7 @@ cbind(df.eff, res.roc.all$roc_local)[!is.na(res.roc.all$roc_local),]
 
 # Bind DMUs & eff at 2018
 df.eff <- cbind(df.eff, Eff.2018 = res.roc.all$eff_t)
+df.eff <- cbind(df.eff, Eff.release = res.roc.all$eff_r)
 
 
 #########################################################################################################################
@@ -97,8 +98,8 @@ df.nvd[round(res.roc.nvd$eff_t, 5) == 1,]
 cbind(df.nvd, res.roc.nvd$roc_local)[!is.na(res.roc.nvd$roc_local),]
 
 # Bind DMUs & eff at 2018
-df.nvd <- cbind(df.nvd, Eff.2018    = res.roc.nvd$eff_t)
-df.nvd <- cbind(df.nvd, Eff.release = res.roc.nvd$eff_r)
+df.nvd <- cbind(df.nvd, Eff.2018.nvd    = res.roc.nvd$eff_t)
+df.nvd <- cbind(df.nvd, Eff.release.nvd = res.roc.nvd$eff_r)
 
 
 #####################################################################################
@@ -118,8 +119,8 @@ df.amd[round(res.roc.amd$eff_t, 5) == 1,]
 cbind(df.amd, res.roc.amd$roc_local)[!is.na(res.roc.amd$roc_local),]
 
 # Bind DMUs & eff at 2018
-df.amd <- cbind(df.amd, Eff.2018    = res.roc.amd$eff_t)
-df.amd <- cbind(df.amd, Eff.release = res.roc.amd$eff_r)
+df.amd <- cbind(df.amd, Eff.2018.amd    = res.roc.amd$eff_t)
+df.amd <- cbind(df.amd, Eff.release.amd = res.roc.amd$eff_r)
 
 
 #####################################################################################
@@ -177,458 +178,54 @@ ggplot(df.reg.amd, aes(x = month, y = TDP)) +
   geom_smooth(method = 'lm', se = TRUE)
 
 
-# Weight based on rescaling each output
-weight.nvd_temp <- data.frame(FPP = 1 / df.reg.nvd$Floating.point.performance, 
-                              TR  = 1 / df.reg.nvd$Texture.rate, 
-                              PR  = 1 / df.reg.nvd$Pixel.rate)[nrow(df.reg.nvd), ]
-weight.nvd <- weight.nvd_temp / sum(weight.nvd_temp)
-
-weight.amd_temp <- data.frame(FPP = 1 / df.reg.amd$Floating.point.performance, 
-                              TR  = 1 / df.reg.amd$Texture.rate, 
-                              PR  = 1 / df.reg.amd$Pixel.rate)[nrow(df.reg.amd), ]
-weight.amd <- weight.amd_temp / sum(weight.amd_temp)
-
-weight     <- rbind(nvd = weight.nvd, 
-                    amd = weight.amd)
-# weight.reg <- rbind(nvd = as.data.frame(t(scale(t(weight.nvd), center = FALSE))), 
-#                     amd = as.data.frame(t(scale(t(weight.amd), center = FALSE))))
-
-
 #####################################################################################
 ### Target setting
 #####################################################################################
 
-# Function to compare
-target.table <- function(DMU, target){
-  table.x <- data.frame(Name = DMU$Name, 
-                        Eff.2018 = DMU$Eff.2018, 
-                        TDP = target$alpha, 
-                        FPP = target$beta[1], 
-                        TR = target$beta[2], 
-                        PR = target$beta[3], 
-                        TDP.change = round(target$alpha / DMU$TDP, 4), 
-                        FPP.change = round(target$beta[1] / DMU$Floating.point.performance, 4), 
-                        TR.change = round(target$beta[2] / DMU$Texture.rate, 4), 
-                        PR.change = round(target$beta[3] / DMU$Pixel.rate, 4))
-  table.x
+making.Table <- function(Name.pr, pred.input, efficiency = "c", data.all = df.eff){
+  table.new <- data.frame()
+  for (i in 1:length(pred.input)){
+    table.pre <- data.frame(Name = if (i == 1) Name.pr else "", 
+                            Target.efficiency = if (i == 1) data.all[which(data.all$Name == Name.pr)[1], ]$Eff.2018 else "",
+                            TDP = pred.input[i], 
+                            Weight.vector = "Auto",
+                            FPP = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
+                                                  t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts)$beta[1], 
+                            TR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
+                                                 t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts)$beta[2], 
+                            PR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
+                                                 t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts)$beta[3], 
+                            Post.hoc.test = data.all[which(data.all$Name == Name.pr)[1], ]$Eff.2018)
+    table.new <- rbind(table.new, table.pre)
+  }
+  if (efficiency[1] != "c"){
+    for (j in 1:length(efficiency)){
+      for (i in 1:length(pred.input)){
+        table.pre <- data.frame(Name = "", 
+                                Target.efficiency = if (i == 1) efficiency[j] else "",
+                                TDP = pred.input[i], 
+                                Weight.vector = "Auto", 
+                                FPP = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
+                                                      t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts, et = efficiency[j])$beta[1], 
+                                TR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
+                                                     t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts, et = efficiency[j])$beta[2], 
+                                PR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
+                                                     t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts, et = efficiency[j])$beta[3], 
+                                Post.hoc.test = data.all[which(data.all$Name == Name.pr)[1], ]$Eff.2018)
+        table.new <- rbind(table.new, table.pre)
+      }
+    }
+    
+  }
+  return(table.new)
 }
 
-# Target setting - Nvidia.RTX 2080
-target.nvd.fit <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                  t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], wv = weight.nvd, rts = rts)
+# NVIDIA & AMD Product table
+table.nvd <- making.Table("RTX 2080", c(pred.TDP.nvd$TDP[1], pred.TDP.nvd$TDP[3]), c(1, mean(df.reg.nvd$Eff.release)))
+table.amd <- making.Table("Radeon RX 580", c(pred.TDP.amd$TDP[1], pred.TDP.amd$TDP[3]), c(1, mean(df.reg.amd$Eff.release)))
 
-target.nvd.upr <- target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                  t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], wv = weight.nvd, rts = rts)
+# Histogram
+hist(replace(df.eff$TDP[df.eff$Released.date > 2017], df.eff$TDP[df.eff$Released.date > 2017] > 300, 290), breaks = 3, xlab = "TDP", main = "Histogram of TDP after 2017")
 
-# Target setting - AMD.Radeon RX 580
-target.amd.fit <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                  t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], wv = weight.amd, rts = rts)
-
-target.amd.upr <- target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                  t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], wv = weight.amd, rts = rts)
-
-# Run function
-target.table(df.nvd[which(df.nvd$Name == "RTX 2080"), ], target.nvd.fit)
-
-target.table(df.amd[which(df.amd$Name == "Radeon RX 580")[1], ], target.amd.fit)
-
-# Grid search
-weight.grid <- data.frame(FPP = rep(seq(1e-3, 1e-2, by = 1e-3), each = 1e+2), 
-                          TR  = rep(seq(1e-1, 1, by = 1e-1), each = 1e+1, times = 1e+1), 
-                          PR  = rep(seq(1001, 1010, by = 1), times = 1e+2))
-
-res.grid    <- data.frame(t(apply(weight.grid, 1, 
-                                  function(x){target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], 
-                                                              wv = x, rts = rts)$beta})))
-
-which(round(res.grid$X1, 2) != round(res.grid$X1[1], 2))
-which(round(res.grid$X2, 4) != round(res.grid$X2[1], 4))
-which(round(res.grid$X3, 4) != round(res.grid$X3[1], 4))
-
-weight.grid.view <- weight.grid[which(round(res.grid$X1, 2) != round(res.grid$X1[1], 2)),]
-for (i in 1 : length(t(weight.grid.view[1]))){
-  weight.grid.view[i, ] <- round(weight.grid.view[i, ] / weight.grid.view[i, 1], 2)
-}
-
-weight.grid.non <- data.frame(weight.grid[-which(round(res.grid$X1, 2) != round(res.grid$X1[1], 2)),])
-for (i in 1 : length(t(weight.grid.non[1]))){
-  weight.grid.non[i, ] <- round(weight.grid.non[i, ] / weight.grid.non[i, 1], 2)
-}
-
-res.grid.view <- res.grid[which(round(res.grid$X1, 2) != round(res.grid$X1[1], 2)),]
-
-plot(weight.grid.view[2:3], pch=25, xlim = c(100, 1000), ylim = c(100, 1000)) 
-points(weight.grid.non[2:3], pch=1, xlim = c(100, 1000), ylim = c(100, 1000), col="red")
-
-# RTX 2080
-table.nvd <- data.frame()
-table.pre <- data.frame(Name = "RTX 2080", 
-                        Target.efficiency = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018,
-                        Displacement = pred.TDP.nvd$TDP[1], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts)$beta[3], 
-                        Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 1))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 1))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 1))$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 7",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 7))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 7))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 7))$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 106",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 106))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 106))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 106))$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.nvd <- rbind(table.nvd, table.pre, table.pre1, table.pre2, table.pre3)
-
-table.pre <- data.frame(Name = "", 
-                        Target.efficiency = "",
-                        Displacement = pred.TDP.nvd$TDP[3], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts)$beta[3], 
-                        Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 1))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 1))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 1))$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 11",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 11))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 11))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 11))$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 210",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 210))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 210))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 210))$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.nvd <- rbind(table.nvd, table.pre, table.pre1, table.pre2, table.pre3)
-
-table.pre <- data.frame(Name = "", 
-                        Target.efficiency = 1.00000,
-                        Displacement = pred.TDP.nvd$TDP[1], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, et = 1)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, et = 1)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, et = 1)$beta[3], 
-                        Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 1), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 1), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 1), et = 1)$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 7",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 7), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 7), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 7), et = 1)$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 106",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 106), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 106), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[1], rts = rts, wv = c(1, 5, 106), et = 1)$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.nvd <- rbind(table.nvd, table.pre, table.pre1, table.pre2, table.pre3)
-
-table.pre <- data.frame(Name = "", 
-                        Target.efficiency = "",
-                        Displacement = pred.TDP.nvd$TDP[3], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, et = 1)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, et = 1)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, et = 1)$beta[3], 
-                        Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 1), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 1), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 1), et = 1)$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 11",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 11), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 11), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 11), et = 1)$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 210",
-                         FPP = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 210), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 210), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.nvd[, id.x]), data.frame(df.nvd[, id.y]), data.frame(df.nvd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.nvd$Name == "RTX 2080"), alpha = pred.TDP.nvd$TDP[3], rts = rts, wv = c(1, 5, 210), et = 1)$beta[3], 
-                         Post.hoc.test = df.nvd[which(df.nvd$Name == "RTX 2080"), ]$Eff.2018)
-table.nvd <- rbind(table.nvd, table.pre, table.pre1, table.pre2, table.pre3)
-
-# Radeon RX 580
-table.amd <- data.frame()
-table.pre <- data.frame(Name = "Radeon RX 580", 
-                        Target.efficiency = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018,
-                        Displacement = pred.TDP.amd$TDP[1], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts)$beta[3], 
-                        Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 1))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 1))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 1))$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 10",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 10))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 10))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 10))$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 100",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 100))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 100))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 100))$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.amd <- rbind(table.amd, table.pre, table.pre1, table.pre2, table.pre3)
-
-table.pre <- data.frame(Name = "", 
-                        Target.efficiency = "",
-                        Displacement = pred.TDP.amd$TDP[3], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts)$beta[3], 
-                        Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 1))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 1))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 1))$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 10",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 10))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 10))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 10))$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 100",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 100))$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 100))$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 100))$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.amd <- rbind(table.amd, table.pre, table.pre1, table.pre2, table.pre3)
-
-table.pre <- data.frame(Name = "", 
-                        Target.efficiency = 1,
-                        Displacement = pred.TDP.amd$TDP[1], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, et = 1)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, et = 1)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, et = 1)$beta[3], 
-                        Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 1), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 1), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 1), et = 1)$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 10",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 10), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 10), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 10), et = 1)$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 100",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 100), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 100), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[1], rts = rts, wv = c(1, 5, 100), et = 1)$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.amd <- rbind(table.amd, table.pre, table.pre1, table.pre2, table.pre3)
-
-table.pre <- data.frame(Name = "", 
-                        Target.efficiency = "",
-                        Displacement = pred.TDP.amd$TDP[3], 
-                        Weight.vector = "Auto",
-                        FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, et = 1)$beta[1], 
-                        TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, et = 1)$beta[2], 
-                        PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                             t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, et = 1)$beta[3], 
-                        Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre1 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 1",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 1), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 1), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 1), et = 1)$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre2 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 10",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 10), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 10), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 10), et = 1)$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.pre3 <- data.frame(Name = "", 
-                         Target.efficiency = "",
-                         Displacement = "", 
-                         Weight.vector = "1 : 5 : 100",
-                         FPP = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                               t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 100), et = 1)$beta[1], 
-                         TR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 100), et = 1)$beta[2], 
-                         PR = target.spec.dea(data.frame(df.amd[, id.x]), data.frame(df.amd[, id.y]), data.frame(df.amd[, id.t]), 
-                                              t = fy, dt = 2, dmu = which(df.amd$Name == "Radeon RX 580")[1], alpha = pred.TDP.amd$TDP[3], rts = rts, wv = c(1, 5, 100), et = 1)$beta[3], 
-                         Post.hoc.test = df.amd[which(df.amd$Name == "Radeon RX 580")[1], ]$Eff.2018)
-table.amd <- rbind(table.amd, table.pre, table.pre1, table.pre2, table.pre3)
+# New target setting 
+df.eff[round(res.roc.all$eff_t, 5) == 1 & df.eff$TDP < 200,]

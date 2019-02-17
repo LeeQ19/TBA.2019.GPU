@@ -225,7 +225,7 @@ table.nvd <- making.Table("RTX 2080", c(pred.TDP.nvd$TDP[1], pred.TDP.nvd$TDP[3]
 table.amd <- making.Table("Radeon RX 580", c(pred.TDP.amd$TDP[1], pred.TDP.amd$TDP[3]), c(1, mean(df.reg.amd$Eff.release)))
 
 # Histogram
-hist(replace(df.eff$TDP[df.eff$Released.date > 2017], df.eff$TDP[df.eff$Released.date > 2017] > 300, 290), breaks = 3, xlab = "TDP", main = "Histogram of TDP after 2017")
+hist(replace(df.eff$TDP[df.eff$Released.date > 2017], df.eff$TDP[df.eff$Released.date > 2017] > 300, 290), breaks = 6, xlab = "TDP", main = "Histogram of TDP after 2017")
 
 # New target setting 
 df.eff[round(res.roc.all$eff_t, 5) == 1 & df.eff$TDP < 200,]

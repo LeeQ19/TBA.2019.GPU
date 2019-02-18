@@ -48,6 +48,78 @@ print(noquote(format(round(t(table.1), 2), big.mark = ",")))
 # Shares of AMD & Nvidia
 aggregate(mf~Released.year, data = df.eff[round(res.roc$eff_r, 4) == 1,], table)
 
+# Figure 1.1 FLOPS/TDP (740*415)
+ggplot() + 
+  geom_point(data = df.eff, 
+             aes(x = month, y = Floating.point.performance/TDP, color = mf), 
+             size = 2, alpha = 0.3) + 
+  geom_line(data = df.eff, stat = "smooth", method = lm, 
+            aes(x = month, y = Floating.point.performance/TDP), 
+            size = 1.0, color = "dodgerblue4", linetype = "dashed") + 
+  geom_point(data = df.eff[round(res.roc$eff_r, 5) == 1,], 
+             aes(x = month, y = Floating.point.performance/TDP, color = mf), 
+             size = 2) + 
+  geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
+            aes(x = month, y = Floating.point.performance/TDP), 
+            size = 1.0, color = "dodgerblue4") + 
+  scale_color_manual(values = c("#75b806", "#870203")) + 
+  scale_x_continuous(labels = c(2006, 2010, 2014, 2018)) +
+  labs(x = "Year", y = "FLOPS/TDP (GFLOPS/W)") + 
+  theme(axis.title           = element_text(size = 14),
+        legend.title         = element_blank(), 
+        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
+        legend.direction     = "vertical", 
+        legend.justification = c(0,1), legend.position = c(0,1), 
+        legend.key = element_blank())
+
+# Figure 1.2 TR/TDP (740*415)
+ggplot() + 
+  geom_point(data = df.eff, 
+             aes(x = month, y = Texture.rate/TDP, color = mf), 
+             size = 2, alpha = 0.3) + 
+  geom_line(data = df.eff, stat = "smooth", method = lm, 
+            aes(x = month, y = Texture.rate/TDP), 
+            size = 1.0, color = "dodgerblue4", linetype = "dashed") + 
+  geom_point(data = df.eff[round(res.roc$eff_r, 5) == 1,], 
+             aes(x = month, y = Texture.rate/TDP, color = mf), 
+             size = 2) + 
+  geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
+            aes(x = month, y = Texture.rate/TDP), 
+            size = 1.0, color = "dodgerblue4") + 
+  scale_color_manual(values = c("#75b806", "#870203")) + 
+  scale_x_continuous(labels = c(2006, 2010, 2014, 2018)) +
+  labs(x = "Year", y = "Texture Fill-Rate/TDP (GTPS/W)") + 
+  theme(axis.title           = element_text(size = 14),
+        legend.title         = element_blank(), 
+        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
+        legend.direction     = "vertical", 
+        legend.justification = c(0,1), legend.position = c(0,1), 
+        legend.key = element_blank())
+
+# Figure 1.3 PR/TDP (740*415)
+ggplot() + 
+  geom_point(data = df.eff, 
+             aes(x = month, y = Pixel.rate/TDP, color = mf), 
+             size = 2, alpha = 0.3) + 
+  geom_line(data = df.eff, stat = "smooth", method = lm, 
+            aes(x = month, y = Pixel.rate/TDP), 
+            size = 1.0, color = "dodgerblue4", linetype = "dashed") + 
+  geom_point(data = df.eff[round(res.roc$eff_r, 5) == 1,], 
+             aes(x = month, y = Pixel.rate/TDP, color = mf), 
+             size = 2) + 
+  geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
+            aes(x = month, y = Pixel.rate/TDP), 
+            size = 1.0, color = "dodgerblue4") + 
+  scale_color_manual(values = c("#75b806", "#870203")) + 
+  scale_x_continuous(labels = c(2006, 2010, 2014, 2018)) +
+  labs(x = "Year", y = "Pixel Fill-Rate/TDP (GPPS/W)") + 
+  theme(axis.title           = element_text(size = 14),
+        legend.title         = element_blank(), 
+        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
+        legend.direction     = "vertical", 
+        legend.justification = c(0,1), legend.position = c(0,1), 
+        legend.key = element_blank())
+
 # Table.2 Model accuracy
 f.hrz   <- 2
 since   <- 2012
@@ -95,93 +167,3 @@ for(i in 1:nrow(table.4)){
 }
 print(cbind(table.4[,1, drop = F], round(table.4[,2,drop = F], 4), table.4[,3, drop = F], 
             format(round(table.4[,4:6], 2), big.mark = ","), round(table.4[,7,drop = F], 4)))
-
-
-#####################################################################################
-### Trends of Outputs per Input
-#####################################################################################
-
-# Make electric efficiency
-df.trend <- data.frame(DMU     = df.eff$DMU, 
-                       Name    = df.eff$Name, 
-                       TDP     = df.eff$TDP, 
-                       FPP     = df.eff$Floating.point.performance, 
-                       TR      = df.eff$Texture.rate, 
-                       PR      = df.eff$Pixel.rate, 
-                       FPP.TDP = df.eff$Floating.point.performance / df.eff$TDP, 
-                       TR.TDP  = df.eff$Texture.rate / df.eff$TDP, 
-                       PR.TDP  = df.eff$Pixel.rate / df.eff$TDP, 
-                       Month   = df.eff$month, 
-                       MF      = df.eff$mf)
-
-# Select DMUs on frontier
-df.frt <- data.frame()
-
-for (i in 2007:2018){
-  res.roc.all <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], i, rts, ori)
-  df.frt      <- rbind(df.frt, df.eff[round(res.roc.all$eff_t, 5) == 1,])
-}
-
-df.frt <- unique(na.omit(df.frt))
-rownames(df.frt) <- seq(nrow(df.frt))
-
-# Make electric efficiency
-df.trend.frt <- data.frame(DMU     = df.frt$DMU, 
-                           Name    = df.frt$Name, 
-                           TDP     = df.frt$TDP, 
-                           FPP     = df.frt$Floating.point.performance, 
-                           TR      = df.frt$Texture.rate, 
-                           PR      = df.frt$Pixel.rate, 
-                           FPP.TDP = df.frt$Floating.point.performance / df.frt$TDP, 
-                           TR.TDP  = df.frt$Texture.rate / df.frt$TDP, 
-                           PR.TDP  = df.frt$Pixel.rate / df.frt$TDP, 
-                           Month   = df.frt$month, 
-                           MF      = df.frt$mf)
-
-colors <- c("NVIDIA" = "#75b806", "AMD" = "#870203")
-
-# Plot FPP/TDP - Month
-ggplot(df.trend) + 
-  geom_point(data = df.trend, aes(x = Month, y = FPP.TDP, color = MF), size = 2, alpha = 0.3) + 
-  geom_line(data = df.trend, stat = "smooth", method = lm, aes(x = Month, y = FPP.TDP), size = 1.0, color = "blue", linetype = "dashed") + 
-  geom_point(data = df.trend.frt, aes(x = Month, y = FPP.TDP, color = MF), size = 2) + 
-  geom_line(data = df.trend.frt, stat = "smooth", method = lm, aes(x = Month, y = FPP.TDP), size = 1.0, color = "blue") + 
-  scale_color_manual(values = colors) + 
-  scale_x_continuous(labels = c(2007, 2011, 2015, 2019)) +
-  labs(x = "Released Year", y = "FLOPS / TDP (GFLOPS / W)") + 
-  theme(legend.title         = element_blank(), 
-        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
-        legend.direction     = "vertical", 
-        legend.justification = c(1,0), legend.position = c(1,0), 
-        legend.key = element_blank())
-
-# Plot TR/TDP - Month
-ggplot(df.trend) + 
-  geom_point(data = df.trend, aes(x = Month, y = TR.TDP, color = MF), size = 2, alpha = 0.3) + 
-  geom_line(data = df.trend, stat = "smooth", method = lm, aes(x = Month, y = TR.TDP), size = 1.0, color = "blue", linetype = "dashed") + 
-  geom_point(data = df.trend.frt, aes(x = Month, y = TR.TDP, color = MF), size = 2) + 
-  geom_line(data = df.trend.frt, stat = "smooth", method = lm, aes(x = Month, y = TR.TDP), size = 1.0, color = "blue") + 
-  scale_color_manual(values = colors) + 
-  scale_x_continuous(labels = c(2007, 2011, 2015, 2019)) +
-  labs(x = "Released Year", y = "TRPS / TDP (GTPS / W)") + 
-  theme(legend.title         = element_blank(), 
-        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
-        legend.direction     = "vertical", 
-        legend.justification = c(1,0), legend.position = c(1,0), 
-        legend.key = element_blank())
-
-# Plot PR/TDP - Month
-ggplot(df.trend) + 
-  geom_point(data = df.trend, aes(x = Month, y = PR.TDP, color = MF), size = 2, alpha = 0.3) + 
-  geom_line(data = df.trend, stat = "smooth", method = lm, aes(x = Month, y = PR.TDP), size = 1.0, color = "blue", linetype = "dashed") + 
-  geom_point(data = df.trend.frt, aes(x = Month, y = PR.TDP, color = MF), size = 2) + 
-  geom_line(data = df.trend.frt, stat = "smooth", method = lm, aes(x = Month, y = PR.TDP), size = 1.0, color = "blue") + 
-  scale_color_manual(values = colors) + 
-  scale_x_continuous(labels = c(2007, 2011, 2015, 2019)) +
-  labs(x = "Released Year", y = "PRPS / TDP (GPPS / W)") + 
-  theme(legend.title         = element_blank(), 
-        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
-        legend.direction     = "vertical", 
-        legend.justification = c(1,0), legend.position = c(1,0), 
-        legend.key = element_blank())
-

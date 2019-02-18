@@ -60,7 +60,7 @@ for(i in since:(2018 - f.hrz)){
   res.e.amd <- mean(abs(df.t.amd[, id.t] - c(res.t.amd)), na.rm = T)
   table.2[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
 }
-print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(table.2, colMeans(res.fit)), 4)))
+print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(table.2, colMeans(table.2)), 4)))
 
 # Table.3 SOAs in 2018
 res.roc <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], fy, rts, ori)
@@ -72,112 +72,24 @@ table.3 <- data.frame(Name     = df.eff$Name[id.lroc],
                       LocalRoC = res.roc$roc_local[id.lroc])
 print(cbind(table.3[,1:3], format(round(table.3[,4:7], 2), big.mark = ","), round(table.3[,8, drop = F], 4)))
 
-
-#########################################################################################################################
-### I/O Regression
-#########################################################################################################################
-
-# Selective data - target & previous model
-### Have to change
-id.nvd <- c(1, 54, 60, 131, 146, 188, 221, 254, 281, 334)
-id.amd <- c(33, 50, 110, 141, 187, 242, 265, 283, 309)
-
-df.reg.nvd <- df.nvd[which(df.nvd$DMU %in% id.nvd), ]
-df.reg.amd <- df.amd[which(df.amd$DMU %in% id.amd), ]
-
-month.pred.nvd <- 167
-month.pred.amd <- 150
-
-
-# TDP predict -Nvidia
-model.TDP.nvd <- lm(TDP ~ month, df.reg.nvd)
-summary(model.TDP.nvd)
-
-pred.TDP.nvd_temp <- predict(model.TDP.nvd, data.frame(month = month.pred.nvd), level = 0.9, interval = "confidence")
-rownames(pred.TDP.nvd_temp) <- c("TDP")
-pred.TDP.nvd <- data.frame(t(pred.TDP.nvd_temp),
-                           TDP.Change = c((pred.TDP.nvd_temp[1] / df.reg.nvd[10, 4] - 1) * 100, (pred.TDP.nvd_temp[2] / df.reg.nvd[10, 4] - 1) * 100, (pred.TDP.nvd_temp[3] / df.reg.nvd[10, 4] - 1) * 100),
-                           month = rep(month.pred.nvd, 3), 
-                           Forecasting.date = rep(month.pred.nvd%/%12+2007+(month.pred.nvd%%12-2)/100, 3))
-
-pred.TDP.nvd
-
-
-# TDP plot - Nvidia
-ggplot(df.reg.nvd, aes(x = month, y = TDP)) + 
-  geom_point() + scale_size(guide = "none") + 
-  geom_smooth(method = 'lm', se = TRUE)
-
-
-# TDP predict - AMD
-model.TDP.amd <- lm(TDP ~ month, df.reg.amd)
-summary(model.TDP.amd)
-
-pred.TDP.amd_temp <- predict(model.TDP.amd, data.frame(month = month.pred.amd), level = 0.9, interval = "confidence")
-rownames(pred.TDP.amd_temp) <- c("TDP")
-pred.TDP.amd <- data.frame(t(pred.TDP.amd_temp),
-                           TDP.Change = c((pred.TDP.amd_temp[1] / df.reg.amd[9, 4] - 1) * 100, (pred.TDP.amd_temp[2] / df.reg.amd[9, 4] - 1) * 100, (pred.TDP.amd_temp[3] / df.reg.amd[9, 4] - 1) * 100),
-                           month = rep(month.pred.amd, 3),
-                           Forecasting.date = rep(month.pred.amd%/%12+2007+(month.pred.amd%%12-2)/100, 3))
-
-pred.TDP.amd
-
-# TDP plot - AMD
-ggplot(df.reg.amd, aes(x = month, y = TDP)) + 
-  geom_point() + scale_size(guide = "none") + 
-  geom_smooth(method = 'lm', se = TRUE)
-
-
-#####################################################################################
-### Target setting
-#####################################################################################
-
-making.Table <- function(Name.pr, pred.input, efficiency = "c", data.all = df.eff){
-  table.new <- data.frame()
-  for (i in 1:length(pred.input)){
-    table.pre <- data.frame(Name = if (i == 1) Name.pr else "", 
-                            Target.efficiency = if (i == 1) data.all[which(data.all$Name == Name.pr)[1], ]$Eff.2018 else "",
-                            TDP = pred.input[i], 
-                            Weight.vector = "Auto",
-                            FPP = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
-                                                  t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts)$beta[1], 
-                            TR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
-                                                 t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts)$beta[2], 
-                            PR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
-                                                 t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts)$beta[3], 
-                            Post.hoc.test = data.all[which(data.all$Name == Name.pr)[1], ]$Eff.2018)
-    table.new <- rbind(table.new, table.pre)
-  }
-  if (efficiency[1] != "c"){
-    for (j in 1:length(efficiency)){
-      for (i in 1:length(pred.input)){
-        table.pre <- data.frame(Name = "", 
-                                Target.efficiency = if (i == 1) efficiency[j] else "",
-                                TDP = pred.input[i], 
-                                Weight.vector = "Auto", 
-                                FPP = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
-                                                      t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts, et = efficiency[j])$beta[1], 
-                                TR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
-                                                     t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts, et = efficiency[j])$beta[2], 
-                                PR = target.spec.dea(data.frame(data.all[, id.x]), data.frame(data.all[, id.y]), data.frame(data.all[, id.t]), 
-                                                     t = fy, dt = 2, dmu = which(data.all$Name == Name.pr)[1], alpha = pred.input[i], rts = rts, et = efficiency[j])$beta[3], 
-                                Post.hoc.test = data.all[which(data.all$Name == Name.pr)[1], ]$Eff.2018)
-        table.new <- rbind(table.new, table.pre)
-      }
-    }
-    
-  }
-  return(table.new)
+# Table.4 Target setting
+id.soa   <- which(res.roc$roc_local > 1)
+id.rtx80 <- which(df.eff$DMU %in% c(1, 54, 60, 131, 146, 188, 221, 254, 281, 334))
+id.rx80  <- which(df.eff$DMU %in% c(33, 50, 110, 141, 187, 242, 265, 283, 309))
+table.4  <- data.frame(Name       = rep(c("RTX 2080", "Radeon RX 580", "Virtual"), each = 3),
+                       T.eff.2020 = c(res.roc$eff_t[284], mean(res.roc$eff_r[id.rtx80]), 1,
+                                      res.roc$eff_t[310], mean(res.roc$eff_r[id.rx80]), 1,
+                                      mean(res.roc$eff_r[df.eff$TDP == 25,]), mean(res.roc$eff_r[df.eff$TDP <= 25,]), 1),
+                       Alpha.TDP  = rep(c(df.eff$TDP[284], df.eff$TDP[310], 25), each = 3),
+                       Beta.FLO   = 1, Beta.TR    = 1, Beta.PR    = 1, Validation = NA)
+for(i in 1:nrow(table.4)){
+  x_f             <- mapply(c, df.eff[id.soa, id.x, drop = F], table.4$Alpha.TDP[i])
+  y_f             <- mapply(c, df.eff[id.soa, id.y, drop = F] * res.roc$roc_local[id.soa,]^2, table.4[i, 4:6])
+  res.target      <- target.spec.dea(x_f, y_f, dmu = length(id.soa) + 1, et = table.4$T.eff.2020[i], 
+                                     alpha  = table.4$Alpha.TDP[i], rts = rts)
+  table.4[i, 4:6] <- y_f[length(id.soa) + 1,] <- res.target$beta
+  table.4[i, 7]   <- dm.dea(x_f, y_f, rts, ori, o = length(id.soa) + 1)$eff[length(id.soa) + 1]
 }
-
-# NVIDIA & AMD Product table
-table.nvd <- making.Table("RTX 2080", c(pred.TDP.nvd$TDP[1], pred.TDP.nvd$TDP[3]), c(1, mean(df.reg.nvd$Eff.release)))
-table.amd <- making.Table("Radeon RX 580", c(pred.TDP.amd$TDP[1], pred.TDP.amd$TDP[3]), c(1, mean(df.reg.amd$Eff.release)))
-
-# Histogram
-hist(replace(df.eff$TDP[df.eff$Released.date > 2017], df.eff$TDP[df.eff$Released.date > 2017] > 300, 290), breaks = 3, xlab = "TDP", main = "Histogram of TDP after 2017")
-
-# New target setting 
-df.eff[round(res.roc.all$eff_t, 5) == 1 & df.eff$TDP < 200,]
-
+print(cbind(table.4[,1, drop = F], round(table.4[,2,drop = F], 4), table.4[,3, drop = F], 
+            format(round(table.4[,4:6], 2), big.mark = ","), round(table.4[,7,drop = F], 4)))
 

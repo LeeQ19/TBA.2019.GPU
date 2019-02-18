@@ -32,9 +32,10 @@ ori    <- "o"
 #########################################################################################################################
 
 # Cleansed data
-df.eff <- df.raw[-id.out,]
-df.nvd <- subset(df.eff, mf == "NVIDIA")
-df.amd <- subset(df.eff, mf == "AMD")
+df.eff  <- df.raw[-id.out,]
+df.nvd  <- subset(df.eff, mf == "NVIDIA")
+df.amd  <- subset(df.eff, mf == "AMD")
+res.roc <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], fy, rts, ori)
 
 # Table.1 Descriptive statistics
 table.1 <- sapply(df.eff[, c(id.x, id.y)], function(x) c(Min  = min(x),
@@ -44,7 +45,7 @@ table.1 <- sapply(df.eff[, c(id.x, id.y)], function(x) c(Min  = min(x),
                                                          Std  = sd(x)))
 print(noquote(format(round(t(table.1), 2), big.mark = ",")))
 
-# Table.2 Verification
+# Table.2 Model accuracy
 f.hrz   <- 2
 since   <- 2012
 table.2 <- data.frame(MAD.all  = NA, MAD.nvd = NA, MAD.amd = NA)
@@ -63,7 +64,6 @@ for(i in since:(2018 - f.hrz)){
 print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(table.2, colMeans(table.2)), 4)))
 
 # Table.3 SOAs in 2018
-res.roc <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], fy, rts, ori)
 id.lroc <- which(res.roc$roc_local > 1)
 table.3 <- data.frame(Name     = df.eff$Name[id.lroc],
                       MF       = df.eff$mf[id.lroc],

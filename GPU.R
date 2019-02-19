@@ -124,8 +124,8 @@ ggplot() +
 # Pro WX 9100
 df.2016.all  <- df.eff[df.eff$Released.year <= (2016 + 2),]
 df.2016.amd  <- df.amd[df.amd$Released.year <= (2016 + 2),]
-res.2016.all <- target.arrival.dea(df.t.all[, id.x], df.t.all[, id.y], df.t.all[, id.t], 2016, rts, ori)
-res.2016.amd <- target.arrival.dea(df.t.amd[, id.x], df.t.amd[, id.y], df.t.amd[, id.t], 2016, rts, ori)
+res.2016.all <- target.arrival.dea(df.2016.all[, id.x], df.2016.all[, id.y], df.2016.all[, id.t], 2016, rts, ori)
+res.2016.amd <- target.arrival.dea(df.2016.amd[, id.x], df.2016.amd[, id.y], df.2016.amd[, id.t], 2016, rts, ori)
 data.frame(A.Arv = df.2016.all$Released.year[df.2016.all$Name == "Pro WX 9100"],
            F.Arv.All = res.2016.all$arrival_seg[df.2016.all$Name == "Pro WX 9100"],
            F.RoC.All = res.2016.all$roc_ind[df.2016.all$Name == "Pro WX 9100"],
@@ -166,8 +166,8 @@ id.rx80  <- which(df.eff$DMU %in% c(33, 50, 110, 141, 187, 242, 265, 283, 309))
 table.4  <- data.frame(Name       = rep(c("RTX 2080", "Radeon RX 580", "Virtual"), each = 3),
                        T.eff.2020 = c(res.roc$eff_t[284], mean(res.roc$eff_r[id.rtx80]), 1,
                                       res.roc$eff_t[310], mean(res.roc$eff_r[id.rx80]), 1,
-                                      mean(res.roc$eff_r[df.eff$TDP == 25,]), mean(res.roc$eff_r[df.eff$TDP <= 25,]), 1),
-                       Alpha.TDP  = rep(c(df.eff$TDP[284], df.eff$TDP[310], 25), each = 3),
+                                      mean(res.roc$eff_r[df.eff$TDP == 75,]), mean(res.roc$eff_r[df.eff$TDP <= 75,]), 1),
+                       Alpha.TDP  = rep(c(df.eff$TDP[284], df.eff$TDP[310], 75), each = 3),
                        Beta.FLO   = 1, Beta.TR    = 1, Beta.PR    = 1, Validation = NA)
 for(i in 1:nrow(table.4)){
   x_f             <- mapply(c, df.eff[id.soa, id.x, drop = F], table.4$Alpha.TDP[i])

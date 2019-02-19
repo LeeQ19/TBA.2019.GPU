@@ -17,13 +17,13 @@ df.raw <- read.csv(url("http://bit.ly/2SxWwZC"), header = T)
 df.raw[, "Released.year"] <- floor(df.raw[, "Released.date"])
 
 # Parameter
-id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144,
-            150, 155, 165, 166, 217, 252, 268, 209, 235, 247, 251, 264)
+id.out <- c(18, 46, 47, 50, 51, 52, 57, 70, 78, 124, 125, 141, 143, 144, 150, 155, 
+            165, 166, 217, 252, 268, 209, 243, 254, 264, 274, 279, 296, 309, 310)
 id.x   <- c(4)
 id.y   <- c(8:10)
 id.t   <- 15
 fy     <- 2018
-rts    <- "vrs"
+rts    <- "drs"
 ori    <- "o"
 
 
@@ -46,6 +46,7 @@ table.1 <- sapply(df.eff[, c(id.x, id.y)], function(x) c(Min  = min(x),
 print(noquote(format(round(t(table.1), 2), big.mark = ",")))
 
 # Shares of AMD & Nvidia
+table(df.eff$mf)
 aggregate(mf~Released.year, data = df.eff[round(res.roc$eff_r, 4) == 1,], table)
 
 # Figure 1.1 FLOPS/TDP (740*415)
@@ -63,7 +64,7 @@ ggplot() +
             aes(x = month, y = Floating.point.performance/TDP), 
             size = 1.0, color = "dodgerblue4") + 
   scale_color_manual(values = c("#75b806", "#870203")) + 
-  scale_x_continuous(labels = c(2006, 2010, 2014, 2018)) +
+  scale_x_continuous(labels = seq(2006, 2018, 4)) +
   labs(x = "Year", y = "FLOPS/TDP (GFLOPS/W)") + 
   theme(axis.title           = element_text(size = 14),
         legend.title         = element_blank(), 
@@ -87,7 +88,7 @@ ggplot() +
             aes(x = month, y = Texture.rate/TDP), 
             size = 1.0, color = "dodgerblue4") + 
   scale_color_manual(values = c("#75b806", "#870203")) + 
-  scale_x_continuous(labels = c(2006, 2010, 2014, 2018)) +
+  scale_x_continuous(labels = seq(2006, 2018, 4)) +
   labs(x = "Year", y = "Texture Fill-Rate/TDP (GTPS/W)") + 
   theme(axis.title           = element_text(size = 14),
         legend.title         = element_blank(), 
@@ -111,7 +112,7 @@ ggplot() +
             aes(x = month, y = Pixel.rate/TDP), 
             size = 1.0, color = "dodgerblue4") + 
   scale_color_manual(values = c("#75b806", "#870203")) + 
-  scale_x_continuous(labels = c(2006, 2010, 2014, 2018)) +
+  scale_x_continuous(labels = seq(2006, 2018, 4)) +
   labs(x = "Year", y = "Pixel Fill-Rate/TDP (GPPS/W)") + 
   theme(axis.title           = element_text(size = 14),
         legend.title         = element_blank(), 
@@ -119,6 +120,17 @@ ggplot() +
         legend.direction     = "vertical", 
         legend.justification = c(0,1), legend.position = c(0,1), 
         legend.key = element_blank())
+
+# Pro WX 9100
+df.2016.all  <- df.eff[df.eff$Released.year <= (2016 + 2),]
+df.2016.amd  <- df.amd[df.amd$Released.year <= (2016 + 2),]
+res.2016.all <- target.arrival.dea(df.t.all[, id.x], df.t.all[, id.y], df.t.all[, id.t], 2016, rts, ori)
+res.2016.amd <- target.arrival.dea(df.t.amd[, id.x], df.t.amd[, id.y], df.t.amd[, id.t], 2016, rts, ori)
+data.frame(A.Arv = df.2016.all$Released.year[df.2016.all$Name == "Pro WX 9100"],
+           F.Arv.All = res.2016.all$arrival_seg[df.2016.all$Name == "Pro WX 9100"],
+           F.RoC.All = res.2016.all$roc_ind[df.2016.all$Name == "Pro WX 9100"],
+           F.Arv.AMD = res.2016.amd$arrival_seg[df.2016.amd$Name == "Pro WX 9100"],
+           F.RoC.AMD = res.2016.amd$roc_ind[df.2016.amd$Name == "Pro WX 9100"])
 
 # Table.2 Model accuracy
 f.hrz   <- 2

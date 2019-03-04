@@ -63,7 +63,7 @@ ggplot() +
   geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
             aes(x = month, y = Floating.point.performance/TDP), 
             size = 1.0, color = "dodgerblue4") + 
-  scale_color_manual(values = c("#75b806", "#870203")) + 
+  scale_color_manual(values = c("#870203", "#75b806")) + 
   scale_x_continuous(labels = seq(2006, 2018, 4)) +
   labs(x = "Year", y = "FLOPS/TDP (GFLOPS/W)") + 
   theme(axis.title           = element_text(size = 14),
@@ -87,7 +87,7 @@ ggplot() +
   geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
             aes(x = month, y = Texture.rate/TDP), 
             size = 1.0, color = "dodgerblue4") + 
-  scale_color_manual(values = c("#75b806", "#870203")) + 
+  scale_color_manual(values = c("#870203", "#75b806")) + 
   scale_x_continuous(labels = seq(2006, 2018, 4)) +
   labs(x = "Year", y = "Texture Fill-Rate/TDP (GTPS/W)") + 
   theme(axis.title           = element_text(size = 14),
@@ -111,7 +111,7 @@ ggplot() +
   geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
             aes(x = month, y = Pixel.rate/TDP), 
             size = 1.0, color = "dodgerblue4") + 
-  scale_color_manual(values = c("#75b806", "#870203")) + 
+  scale_color_manual(values = c("#870203", "#75b806")) + 
   scale_x_continuous(labels = seq(2006, 2018, 4)) +
   labs(x = "Year", y = "Pixel Fill-Rate/TDP (GPPS/W)") + 
   theme(axis.title           = element_text(size = 14),

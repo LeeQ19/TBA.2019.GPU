@@ -71,7 +71,13 @@ ggplot() +
         legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
         legend.direction     = "vertical", 
         legend.justification = c(0,1), legend.position = c(0,1), 
-        legend.key = element_blank())
+        legend.key = element_blank()) + 
+  annotate("text", x = 93, y = 33, 
+           label = round(lm(Floating.point.performance/TDP ~ month, data = df.eff[round(res.roc$eff_r, 5) == 1,])$coefficients[2] * 12, 4), 
+           color = "dodgerblue4") + 
+  annotate("text", x = 109, y = 30, 
+           label = round(lm(Floating.point.performance/TDP ~ month, data = df.eff)$coefficients[2] * 12, 4), 
+           color = "dodgerblue4")
 
 # Figure 1.2 TR/TDP (740*415)
 ggplot() + 
@@ -95,7 +101,13 @@ ggplot() +
         legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
         legend.direction     = "vertical", 
         legend.justification = c(0,1), legend.position = c(0,1), 
-        legend.key = element_blank())
+        legend.key = element_blank()) + 
+  annotate("text", x = 93, y = 1.05, 
+           label = round(lm(Texture.rate/TDP ~ month, data = df.eff[round(res.roc$eff_r, 5) == 1,])$coefficients[2] * 12, 4), 
+           color = "dodgerblue4") + 
+  annotate("text", x = 109, y = 0.95, 
+           label = round(lm(Texture.rate/TDP ~ month, data = df.eff)$coefficients[2] * 12, 4), 
+           color = "dodgerblue4")
 
 # Figure 1.3 PR/TDP (740*415)
 ggplot() + 
@@ -119,7 +131,43 @@ ggplot() +
         legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
         legend.direction     = "vertical", 
         legend.justification = c(0,1), legend.position = c(0,1), 
-        legend.key = element_blank())
+        legend.key = element_blank()) + 
+  annotate("text", x = 93, y = 0.42, 
+           label = round(lm(Texture.rate/TDP ~ month, data = df.eff[round(res.roc$eff_r, 5) == 1,])$coefficients[2] * 12, 4), 
+           color = "dodgerblue4") + 
+  annotate("text", x = 109, y = 0.37, 
+           label = round(lm(Texture.rate/TDP ~ month, data = df.eff)$coefficients[2] * 12, 4), 
+           color = "dodgerblue4")
+
+# Figure 1.4 TDP (740*415)
+ggplot() + 
+  geom_point(data = df.eff, 
+             aes(x = month, y = TDP, color = mf), 
+             size = 2, alpha = 0.3) + 
+  geom_line(data = df.eff, stat = "smooth", method = lm, 
+            aes(x = month, y = TDP), 
+            size = 1.0, color = "dodgerblue4", linetype = "dashed") + 
+  geom_point(data = df.eff[round(res.roc$eff_r, 5) == 1,], 
+             aes(x = month, y = TDP, color = mf), 
+             size = 2) + 
+  geom_line(data = df.eff[round(res.roc$eff_r, 5) == 1,], stat = "smooth", method = lm, 
+            aes(x = month, y = TDP), 
+            size = 1.0, color = "dodgerblue4") + 
+  scale_color_manual(values = c("#870203", "#75b806")) + 
+  scale_x_continuous(labels = seq(2006, 2018, 4)) +
+  labs(x = "Year", y = "TDP (W)") + 
+  theme(axis.title           = element_text(size = 14),
+        legend.title         = element_blank(), 
+        legend.background    = element_rect(fill = "transparent", colour = "transparent"), 
+        legend.direction     = "vertical", 
+        legend.justification = c(0,1), legend.position = c(0,1), 
+        legend.key = element_blank()) + 
+  annotate("text", x = 93, y = 210, 
+           label = round(lm(TDP ~ month, data = df.eff[round(res.roc$eff_r, 5) == 1,])$coefficients[2] * 12, 4), 
+           color = "dodgerblue4") + 
+  annotate("text", x = 109, y = 175, 
+           label = round(lm(TDP ~ month, data = df.eff)$coefficients[2] * 12, 4), 
+           color = "dodgerblue4")
 
 # Pro WX 9100
 df.2016.all  <- df.eff[df.eff$Released.year <= (2016 + 2),]
@@ -131,6 +179,24 @@ data.frame(A.Arv = df.2016.all$Released.year[df.2016.all$Name == "Pro WX 9100"],
            F.RoC.All = res.2016.all$roc_ind[df.2016.all$Name == "Pro WX 9100"],
            F.Arv.AMD = res.2016.amd$arrival_seg[df.2016.amd$Name == "Pro WX 9100"],
            F.RoC.AMD = res.2016.amd$roc_ind[df.2016.amd$Name == "Pro WX 9100"])
+
+# ROC average by year
+roc.avg <- data.frame(Year = NA)
+for(i in 2007:2017){
+  df.next  <- df.eff[df.eff$Released.year <= (i + 1), ]
+  res.next <- target.arrival.dea(df.next[, id.x], df.next[, id.y], df.next[, id.t], i, rts, ori)
+  roc.avg  <- rbind(roc.avg, mean(na.omit(res.next$roc_ind)))
+}
+roc.avg
+
+# Distribution of Technology Frontier
+res.eff.rls <- df.eff[which(round(res.roc$eff_r, 6) == 1), c(2, 13, 15)]
+
+table.1.1 <- data.frame(AMD = NA, NVIDIA = NA)
+for(i in 2007:2018){
+  res.eff <- roc.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], i, rts, ori)$eff_t
+  table.1.1 <- rbind(table.1.1, table(df.eff[which(round(res.eff, 6) == 1), 13]))
+}
 
 # Table.2 Model accuracy
 f.hrz   <- 2
@@ -149,6 +215,27 @@ for(i in since:(2018 - f.hrz)){
   table.2[i - since + 1,] <- c(res.e.all, res.e.nvd, res.e.amd)
 }
 print(cbind(F.origin = c(since:(2018 - f.hrz), "Avg"), round(rbind(table.2, colMeans(table.2)), 4)))
+
+table.2.1.all <- data.frame(Released.date = df.eff$Released.date, mf = df.eff$mf)
+for(i in 2007:2018){
+  res.t.all     <- target.arrival.dea(df.eff[, id.x], df.eff[, id.y], df.eff[, id.t], i, rts, ori)$arrival_seg
+  colnames(res.t.all) <- i
+  table.2.1.all <- cbind(table.2.1.all, res.t.all)
+}
+
+table.2.1.nvd <- data.frame(Released.date = df.nvd$Released.date)
+for(i in 2007:2018){
+  res.t.nvd     <- target.arrival.dea(df.nvd[, id.x], df.nvd[, id.y], df.nvd[, id.t], i, rts, ori)$arrival_seg
+  colnames(res.t.nvd) <- i
+  table.2.1.nvd <- cbind(table.2.1.nvd, res.t.nvd)
+}
+
+table.2.1.amd <- data.frame(Released.date = df.amd$Released.date)
+for(i in c(2008, 2011:2018)){
+  res.t.amd     <- target.arrival.dea(df.amd[, id.x], df.amd[, id.y], df.amd[, id.t], i, rts, ori)$arrival_seg
+  colnames(res.t.amd) <- i
+  table.2.1.amd <- cbind(table.2.1.amd, res.t.amd)
+}
 
 # Table.3 SOAs in 2018
 id.lroc <- which(res.roc$roc_local > 1)
